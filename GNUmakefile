@@ -6,8 +6,8 @@ default: build
 build: all
 
 fmt:
-	gofmt -w $(GOFMT_FILES)
-	goimports -w $(GOFMT_FILES)
+	@gofmt -w $(GOFMT_FILES)
+	@goimports -w $(GOFMT_FILES)
 
 vendor:
 	@govendor sync
@@ -17,7 +17,7 @@ vendor:
 all: fmt vendor mac windows linux
 
 copy:
-	tar -xvf bin/BlackHole_darwin-amd64.tgz && mv bin/BlackHole $(shell dirname `which terraform`)
+	tar -xvf bin/BlackHole_darwin-amd64.tgz && mv bin/BlackHole $(shell dirname `which BlackHole`)
 
 clean:
 	rm -rf bin/*
