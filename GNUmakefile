@@ -9,11 +9,12 @@ fmt:
 	gofmt -w $(GOFMT_FILES)
 	goimports -w $(GOFMT_FILES)
 
+vendor:
+	@govendor sync
 
+.PHONY: build fmt vendor
 
-.PHONY: build fmt 
-
-all: mac windows linux
+all: fmt vendor mac windows linux
 
 copy:
 	tar -xvf bin/BlackHole_darwin-amd64.tgz && mv bin/BlackHole $(shell dirname `which terraform`)
