@@ -16,8 +16,10 @@ vendor:
 
 all: fmt vendor mac windows linux
 
+dev: clean fmt mac copy
+
 copy:
-	tar -xvf bin/BlackHole_darwin-amd64.tgz && mv bin/BlackHole $(shell dirname `which BlackHole`)
+	tar -xvf bin/BlackHole_darwin-amd64.tgz
 
 clean:
 	rm -rf bin/*
