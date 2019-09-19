@@ -1,7 +1,8 @@
 package main
 
 import (
-	"fmt"
+	"BlackHole/config"
+	"flag"
 	"os"
 
 	log "github.com/sirupsen/logrus"
@@ -9,11 +10,10 @@ import (
 )
 
 func initLog(level string, output string) {
+	//set log formatter
 	logFormatter := new(log.TextFormatter)
-
 	logFormatter.TimestampFormat = "2006-01-02 15:04:05"
 	logFormatter.FullTimestamp = true
-
 	log.SetFormatter(logFormatter)
 
 	//set default level
@@ -22,6 +22,7 @@ func initLog(level string, output string) {
 	//set default output
 	log.SetOutput(os.Stdout)
 
+	//set level
 	logLevel, err := log.ParseLevel(level)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -32,6 +33,7 @@ func initLog(level string, output string) {
 	}
 	log.SetLevel(logLevel)
 
+	//set output
 	switch {
 	case output == "stderr":
 		log.SetOutput(os.Stderr)
@@ -50,8 +52,20 @@ func initLog(level string, output string) {
 }
 
 func main() {
-	fmt.Println("vim-go")
-	initLog("info1", "stdout")
+	configFile := flag.String("config-file", "./conf/BlackHole.conf", "config file")
+	flag.Parse()
+
+	err := config.ParseConfig(*configFile)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Error("Parse config file error")
+	}
+
+	initLog(config.GlobalConfig.Log.Level, config.GlobalConfig.Log.Output)
+
+	log.Info(config.GetConfig())
+
 	log.WithFields(log.Fields{
 		"animal": "walrus",
 		"size":   10,
