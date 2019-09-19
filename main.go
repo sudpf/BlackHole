@@ -5,22 +5,53 @@ import (
 	"os"
 
 	log "github.com/sirupsen/logrus"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-func init() {
-	// Log as JSON instead of the default ASCII formatter.
-	log.SetFormatter(&log.JSONFormatter{})
+func initLog(level string, output string) {
+	logFormatter := new(log.TextFormatter)
 
-	// Output to stdout instead of the default stderr
-	// Can be any io.Writer, see below for File example
+	logFormatter.TimestampFormat = "2006-01-02 15:04:05"
+	logFormatter.FullTimestamp = true
+
+	log.SetFormatter(logFormatter)
+
+	//set default level
+	log.SetLevel(log.InfoLevel)
+
+	//set default output
 	log.SetOutput(os.Stdout)
 
-	// Only log the warning severity or above.
-	log.SetLevel(log.WarnLevel)
+	logLevel, err := log.ParseLevel(level)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Error("Parse log level error")
+
+		logLevel = log.InfoLevel
+	}
+	log.SetLevel(logLevel)
+
+	switch {
+	case output == "stderr":
+		log.SetOutput(os.Stderr)
+	case output == "stdout":
+		log.SetOutput(os.Stdout)
+	default:
+		logOutput := &lumberjack.Logger{
+			Filename: output,
+			Compress: true,
+		}
+
+		log.SetOutput(logOutput)
+	}
+
+	return
 }
 
 func main() {
 	fmt.Println("vim-go")
+	initLog("info1", "stdout")
 	log.WithFields(log.Fields{
 		"animal": "walrus",
 		"size":   10,
