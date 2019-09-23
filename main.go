@@ -1,6 +1,7 @@
 package main
 
 import (
+	"BlackHole/api"
 	"BlackHole/config"
 	"BlackHole/logger"
 	"flag"
@@ -23,8 +24,6 @@ func main() {
 
 	log.Info(config.GetConfig())
 
-	log.WithFields(log.Fields{
-		"animal": "walrus",
-		"size":   10,
-	}).Info("A group of walrus emerges from the ocean")
+	api.InitApi()
+
 }
