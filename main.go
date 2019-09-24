@@ -25,5 +25,5 @@ func main() {
 	log.Info(config.GetConfig())
 
 	api.InitApi()
-
+	api.Run()
 }
