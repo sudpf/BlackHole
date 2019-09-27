@@ -8,6 +8,8 @@ BlackHole
 # VIM IDE
 - [Macos](http://blog.xuezheyoushi.com/2017/09/07/Mac-OSXVim%E6%90%AD%E5%BB%BAGolang%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83)
 
+- [Linux]()
+
 	git clone https://github.com/golang/tools  
 	go install golang.org/x/tools/cmd/guru
 	
