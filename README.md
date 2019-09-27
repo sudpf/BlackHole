@@ -10,11 +10,9 @@ BlackHole
 
 - [Linux]()
 
-	git clone https://github.com/golang/tools  
-	go install golang.org/x/tools/cmd/guru
+	https://www.jianshu.com/p/a7c3aeb0948d
+	https://my.oschina.net/chinaliuhan/blog/3110709/print
 	
-	git clone https://github.com/Go-zh/tools.git  
-	go install github.com/Go-zh/tools/cmd/gopls
 
 # Debug
 - [Pprof](http://io.upyun.com/2018/01/21/debug-golang-application-with-pprof-and-flame-graph/)
