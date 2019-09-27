@@ -7,10 +7,9 @@ BlackHole
 
 # VIM IDE
 - [Macos](http://blog.xuezheyoushi.com/2017/09/07/Mac-OSXVim%E6%90%AD%E5%BB%BAGolang%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83)
+	
 
-- [Linux]()
-
-	https://www.jianshu.com/p/a7c3aeb0948d
+	https://www.jianshu.com/p/a7c3aeb0948d  
 	https://my.oschina.net/chinaliuhan/blog/3110709/print
 	
 
