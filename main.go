@@ -1,7 +1,7 @@
 package main
 
 import (
-	"BlackHole/api"
+	v1 "BlackHole/api/v1"
 	"BlackHole/config"
 	"BlackHole/logger"
 	"flag"
@@ -24,6 +24,6 @@ func main() {
 
 	log.Info(config.GetConfig())
 
-	api.InitApi()
-	api.Run()
+	v1.InitApi()
+	v1.Run()
 }

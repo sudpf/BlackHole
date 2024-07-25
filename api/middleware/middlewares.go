@@ -1,4 +1,4 @@
-package api
+package middleware
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func initMiddlewares() {
+func InitMiddlewares(router *gin.Engine) {
 	router.Use(gin.LoggerWithConfig(gin.LoggerConfig{Output: log.StandardLogger().Out, Formatter: func(param gin.LogFormatterParams) string {
 		// your custom format
 		return fmt.Sprintf("time=\"%s\" client=\"%s\" method=\"%s\" path=\"%s\" protocol=\"%s\" code=\"%d\" latency=\"%s\" useragent=\"%s\" error=\"%s\"\n",

@@ -1,6 +1,10 @@
-package api
+package v1
 
 import (
+	"BlackHole/api/middleware"
+	"BlackHole/api/v1/ping"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 
 	log "github.com/sirupsen/logrus"
@@ -39,20 +43,24 @@ func (a *ApiRouter) SetRouter() {
 }
 
 func Run() {
-	router.GET("/ping", func(c *gin.Context) {
-		c.String(200, "pong")
-	})
-
 	router.Run(":8080")
 }
 
 func init() {
 	router = gin.New()
 	apiRouters = map[string]ApiRouterInterface{}
+
+	routes := ping.NewRouter().Routes()
+	for _, route := range routes {
+		switch route.Method() {
+		case http.MethodGet:
+			router.GET(route.Path(), route.Handler())
+		}
+	}
 }
 
 func InitApi() {
-	initMiddlewares()
+	middleware.InitMiddlewares(router)
 }
 
 func RegisteRouter(a ApiRouterInterface) {
