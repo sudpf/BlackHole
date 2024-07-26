@@ -2,6 +2,30 @@ TEST?=$$(go list ./... |grep -v 'vendor')
 GOFMT_FILES?=$$(find . -name '*.go' |grep -v vendor)
 GFLAGS=-ldflags "-w -s -buildid=${BUILD_ID}"
 
+UNAME_S := $(shell uname -s)
+UNAME_M := $(shell uname -m)
+
+# 设置默认值
+ifeq ($(UNAME_S),Linux)
+    GOOS := linux
+else ifeq ($(UNAME_S),Darwin)
+    GOOS := darwin
+else ifeq ($(UNAME_S),Windows_NT)
+    GOOS := windows
+else
+    GOOS := unknown
+endif
+
+ifeq ($(UNAME_M),x86_64)
+    GOARCH := amd64
+else ifeq ($(UNAME_M),arm64)
+    GOARCH := arm64
+else ifeq ($(UNAME_M),aarch64)
+    GOARCH := arm64
+else
+    GOARCH := unknown
+endif
+
 default: build
 
 build: all
@@ -23,7 +47,7 @@ vendor:
 
 .PHONY: build env fmt vendor
 
-all: fmt vendor mac windows linux
+all: fmt vendor stash voidengine
 
 dev: clean fmt mac copy
 
@@ -33,17 +57,8 @@ copy:
 clean:
 	rm -rf bin/*
 
-mac:
-	GOOS=darwin GOARCH=amd64 go build ${GFLAGS} -o bin/BlackHole
-	#tar czvf bin/BlackHole_darwin-amd64.tgz bin/BlackHole
-	#rm -rf bin/BlackHole
+stash:
+	GOOS=${GOOS} GOARCH=${GOARCH} go build ${GFLAGS} -o bin/stash cmd/stash/main.go
 
-windows:
-	GOOS=windows GOARCH=amd64 go build ${GFLAGS} -o bin/BlackHole.exe
-	#tar czvf bin/BlackHole_windows-amd64.tgz bin/BlackHole.exe
-	#rm -rf bin/BlackHole.exe
-
-linux:
-	GOOS=linux GOARCH=amd64 go build ${GFLAGS} -o bin/BlackHole
-	#tar czvf bin/BlackHole_linux-amd64.tgz bin/BlackHole
-	#rm -rf bin/BlackHole
+voidengine:
+	GOOS=${GOOS} GOARCH=${GOARCH} go build ${GFLAGS} -o bin/voidengine cmd/voidengine/main.go

@@ -2,7 +2,7 @@ package v1
 
 import (
 	"BlackHole/api/middleware"
-	"BlackHole/api/v1/ping"
+	"BlackHole/api/voidengine/v1/ping"
 	"net/http"
 
 	"github.com/gin-gonic/gin"

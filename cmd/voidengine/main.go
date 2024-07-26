@@ -1,7 +1,7 @@
 package main
 
 import (
-	v1 "BlackHole/api/v1"
+	v1 "BlackHole/api/voidengine/v1"
 	"BlackHole/config"
 	"BlackHole/logger"
 	"flag"
