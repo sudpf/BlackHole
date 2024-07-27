@@ -1,9 +1,9 @@
 package main
 
 import (
-	v1 "BlackHole/api/voidengine/v1"
-	"BlackHole/config"
-	"BlackHole/logger"
+	"BlackHole/api/voidengine/openapi"
+	"BlackHole/pkg/config"
+	"BlackHole/pkg/logger"
 	"flag"
 
 	log "github.com/sirupsen/logrus"
@@ -24,6 +24,6 @@ func main() {
 
 	log.Info(config.GetConfig())
 
-	v1.InitApi()
-	v1.Run()
+	openapi.InitApi()
+	openapi.Run()
 }
