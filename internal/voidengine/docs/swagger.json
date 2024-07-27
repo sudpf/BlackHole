@@ -1,0 +1,47 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "这里写描述信息",
+        "title": "\"API 文档\"",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "这里写联系人信息",
+            "url": "http://www.swagger.io/support",
+            "email": "support@swagger.io"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        }
+    },
+    "host": "这里写接口服务的host",
+    "basePath": "这里写base path",
+    "paths": {
+        "/ping": {
+            "get": {
+                "description": "Ping example endpoint",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "example"
+                ],
+                "summary": "Ping Example",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

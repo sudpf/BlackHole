@@ -57,8 +57,12 @@ copy:
 clean:
 	rm -rf bin/*
 
-stash:
+swagger-generator: fmt vendor
+	GOOS=${GOOS} GOARCH=${GOARCH} go build ${GFLAGS} -o bin/swagger-generator cmd/swagger-generator/main.go
+	./bin/swagger-generator -source=./internal/voidengine/controller/controller.go -output=./internal/voidengine/docs
+
+stash: fmt vendor
 	GOOS=${GOOS} GOARCH=${GOARCH} go build ${GFLAGS} -o bin/stash cmd/stash/main.go
 
-voidengine:
+voidengine: fmt vendor swagger-generator
 	GOOS=${GOOS} GOARCH=${GOARCH} go build ${GFLAGS} -o bin/voidengine cmd/voidengine/main.go
