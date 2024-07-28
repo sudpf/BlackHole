@@ -1,14 +1,22 @@
 package middleware
 
 import (
+	"BlackHole/pkg/config"
 	"fmt"
 
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-func InitMiddlewares(router *gin.Engine) {
-	router.Use(gin.LoggerWithConfig(gin.LoggerConfig{Output: log.StandardLogger().Out, Formatter: func(param gin.LogFormatterParams) string {
+func ApiLogMiddlewares(router *gin.Engine) {
+	var ginLog = logrus.New()
+	ginLog.SetOutput(&lumberjack.Logger{
+		Filename: config.GetVoidEngineConfig().ApiLogFile(),
+		Compress: true,
+	})
+
+	router.Use(gin.LoggerWithConfig(gin.LoggerConfig{Output: ginLog.Out, Formatter: func(param gin.LogFormatterParams) string {
 		// your custom format
 		return fmt.Sprintf("time=\"%s\" client=\"%s\" method=\"%s\" path=\"%s\" protocol=\"%s\" code=\"%d\" latency=\"%s\" useragent=\"%s\" error=\"%s\"\n",
 			param.TimeStamp.Format("2006-01-02 15:04:05"),

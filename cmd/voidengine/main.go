@@ -10,19 +10,19 @@ import (
 )
 
 func main() {
-	configFile := flag.String("config-file", "./conf/BlackHole.conf", "config file")
+	configFile := flag.String("config-file", "voidengine.conf", "config file")
 	flag.Parse()
 
-	err := config.ParseConfig(*configFile)
+	err := config.ParseVoidEngineConfig(*configFile)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err,
 		}).Error("Parse config file error")
 	}
 
-	logger.InitLog(config.GlobalConfig.Log.Level, config.GlobalConfig.Log.Output)
+	logger.InitLog(config.GetVoidEngineConfig().LogLevel(), config.GetVoidEngineConfig().AppLogFile())
 
-	log.Info(config.GetConfig())
+	log.Info(config.GetVoidEngineConfig().String())
 
 	openapi.InitApi()
 	openapi.Run()

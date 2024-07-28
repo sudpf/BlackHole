@@ -1,37 +1,29 @@
 package config
 
-import (
-	"bytes"
-
-	"github.com/BurntSushi/toml"
-	log "github.com/sirupsen/logrus"
-)
+type appConfig struct {
+	ListenHttp  string `toml:"listen_http"`
+	ListenHttps string `toml:"listen_https"`
+}
 
 type logConfig struct {
-	Level  string `toml:"level"`
-	Output string `toml:"output"`
+	Level string `toml:"level"`
+	Size  string `toml:"size"`
+	Dir   string `toml:"dir"`
 }
 
-type tomlConfig struct {
-	Title string
-	Log   logConfig
+type MySQLConfig struct {
+	Debug bool   `toml:"debug"`
+	Log   string `toml:"log"`
+	Link  string `toml:"link"`
 }
 
-var GlobalConfig tomlConfig
-
-func GetConfig() string {
-	buf := new(bytes.Buffer)
-	if err := toml.NewEncoder(buf).Encode(GlobalConfig); err != nil {
-		log.Fatal(err)
-	}
-
-	return buf.String()
+type ClickHouseConfig struct {
+	Debug bool   `toml:"debug"`
+	Log   string `toml:"log"`
+	Link  string `toml:"link"`
 }
 
-func ParseConfig(file string) error {
-	if _, err := toml.DecodeFile(file, &GlobalConfig); err != nil {
-		return err
-	}
-
-	return nil
+type DatabaseConfig struct {
+	MySQL      []MySQLConfig      `toml:"mysql"`
+	ClickHouse []ClickHouseConfig `toml:"clickhouse"`
 }

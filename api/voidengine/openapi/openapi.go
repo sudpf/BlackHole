@@ -24,7 +24,14 @@ func Run() {
 func InitApi() {
 	apiRouter = gin.New()
 
-	middleware.InitMiddlewares(apiRouter)
+	middleware.ApiLogMiddlewares(apiRouter)
+
+	apiRouter.NoRoute(func(c *gin.Context) {
+		c.JSON(http.StatusNotFound, gin.H{
+			"status":  "error",
+			"message": "Page not found",
+		})
+	})
 
 	swagger.SwaggerGenerator(apiRouter)
 	docs.SwaggerInfo.Title = "VoidEngen"
@@ -32,7 +39,7 @@ func InitApi() {
 	docs.SwaggerInfo.Description = "API 文档"
 	docs.SwaggerInfo.Host = "127.0.0.1:8080"
 	docs.SwaggerInfo.BasePath = "/v1"
-	apiRouter.Static("/docs", "/Users/liyuzhu/Src/BlackHoleinternal/voidengen/docs")
+	apiRouter.Static("/docs", "internal/voidengen/docs")
 
 	for groupStr, routes := range apiRoutes {
 		group := apiRouter.Group(groupStr)
