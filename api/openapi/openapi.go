@@ -4,7 +4,7 @@ import (
 	"BlackHole/api/middleware"
 	"BlackHole/api/router"
 	"BlackHole/api/swagger"
-	"BlackHole/internal/voidengine/docs"
+	"BlackHole/internal/docs/voidengine"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -24,6 +24,9 @@ func Run() {
 func InitApi() {
 	apiRouter = gin.New()
 
+	gin.DefaultWriter = log.StandardLogger().Out
+	gin.DefaultErrorWriter = log.StandardLogger().Out
+
 	middleware.ApiLogMiddlewares(apiRouter)
 
 	apiRouter.NoRoute(func(c *gin.Context) {
@@ -34,12 +37,12 @@ func InitApi() {
 	})
 
 	swagger.SwaggerGenerator(apiRouter)
-	docs.SwaggerInfo.Title = "VoidEngen"
-	docs.SwaggerInfo.Version = "v1"
-	docs.SwaggerInfo.Description = "API 文档"
-	docs.SwaggerInfo.Host = "127.0.0.1:8080"
-	docs.SwaggerInfo.BasePath = "/v1"
-	apiRouter.Static("/docs", "internal/voidengen/docs")
+	voidengine.SwaggerInfo.Title = "VoidEngen"
+	voidengine.SwaggerInfo.Version = "v1"
+	voidengine.SwaggerInfo.Description = "API 文档"
+	voidengine.SwaggerInfo.Host = "127.0.0.1:8080"
+	voidengine.SwaggerInfo.BasePath = "/v1"
+	apiRouter.Static("/voidengine", "internal/voidengen/voidengine")
 
 	for groupStr, routes := range apiRoutes {
 		group := apiRouter.Group(groupStr)

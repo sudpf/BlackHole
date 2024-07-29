@@ -1,7 +1,9 @@
 package main
 
 import (
-	"BlackHole/api/voidengine/openapi"
+	"BlackHole/api/openapi"
+	_ "BlackHole/api/openapi/v1/voidengine"
+	"BlackHole/internal/model"
 	"BlackHole/pkg/config"
 	"BlackHole/pkg/logger"
 	"flag"
@@ -25,5 +27,6 @@ func main() {
 	log.Info(config.GetVoidEngineConfig().String())
 
 	openapi.InitApi()
+	model.InitDB()
 	openapi.Run()
 }

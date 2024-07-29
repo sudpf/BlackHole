@@ -59,7 +59,7 @@ clean:
 
 swagger-generator: fmt vendor
 	GOOS=${GOOS} GOARCH=${GOARCH} go build ${GFLAGS} -o bin/swagger-generator cmd/swagger-generator/main.go
-	./bin/swagger-generator -source=./internal/voidengine/controller/controller.go -output=./internal/voidengine/docs
+	./bin/swagger-generator -source=./internal/controller/voidengine/controller.go -output=./internal/docs/voidengine
 
 stash: fmt vendor
 	GOOS=${GOOS} GOARCH=${GOARCH} go build ${GFLAGS} -o bin/stash cmd/stash/main.go

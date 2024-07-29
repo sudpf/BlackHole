@@ -1,4 +1,4 @@
-package controller
+package voidengine
 
 // @title "API 文档"
 // @openapi 3.0.0
