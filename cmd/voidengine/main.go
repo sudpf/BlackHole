@@ -1,9 +1,9 @@
 package main
 
 import (
-	"BlackHole/api/openapi"
-	_ "BlackHole/api/openapi/v1/voidengine"
-	"BlackHole/internal/model"
+	"BlackHole/api/voidengine/openapi"
+	_ "BlackHole/api/voidengine/openapi/v1/router"
+	"BlackHole/internal/voidengine/model"
 	"BlackHole/pkg/config"
 	"BlackHole/pkg/logger"
 	"flag"

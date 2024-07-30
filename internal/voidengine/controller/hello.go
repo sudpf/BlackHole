@@ -1,13 +1,19 @@
-package voidengine
+package controller
 
 import (
 	"BlackHole/pkg/env"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
+
+type Ping struct {
+}
+
+func NewPing() *Ping {
+	return &Ping{}
+}
 
 // @Summary Ping Example
 // @Description Ping example endpoint
@@ -16,16 +22,12 @@ import (
 // @Produce json
 // @Success 200 {object} map[string]string
 // @Router /ping [get]
-func PingGet(c *gin.Context, e *env.Env) {
+func (p *Ping) PingGet(c *gin.Context, e *env.Env) error {
 	log.WithFields(logrus.Fields{"clientip": e.ClientIp}).Error("Get ping")
-	c.JSON(http.StatusOK, gin.H{
-		"message": "get pong",
-	})
+	return nil
 }
 
-func PingPost(c *gin.Context, e *env.Env) {
+func (p *Ping) PingPost(c *gin.Context, e *env.Env) error {
 	log.WithFields(logrus.Fields{"clientip": e.ClientIp}).Error("Post ping")
-	c.JSON(http.StatusOK, gin.H{
-		"message": "post pong",
-	})
+	return nil
 }

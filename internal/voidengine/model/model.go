@@ -1,8 +1,6 @@
 package model
 
 import (
-	model "BlackHole/internal/model/voidengine"
-
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -22,7 +20,7 @@ func InitDB() error {
 	}
 
 	// 自动迁移模式
-	db.AutoMigrate(&model.User{})
+	db.AutoMigrate(&User{})
 
 	return nil
 }
