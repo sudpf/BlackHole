@@ -17,9 +17,9 @@
     "host": "这里写接口服务的host",
     "basePath": "这里写base path",
     "paths": {
-        "/ping": {
-            "get": {
-                "description": "Ping example endpoint",
+        "/v1//user": {
+            "put": {
+                "description": "Add a User",
                 "consumes": [
                     "application/json"
                 ],
@@ -27,19 +27,234 @@
                     "application/json"
                 ],
                 "tags": [
-                    "example"
+                    "User"
                 ],
-                "summary": "Ping Example",
+                "parameters": [
+                    {
+                        "description": "modify user param",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/message.ModifyUserRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/response.ApiResponse"
                         }
                     }
+                }
+            },
+            "post": {
+                "description": "Add a User",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "parameters": [
+                    {
+                        "description": "add user param",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/message.AddUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.ApiResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a User",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "parameters": [
+                    {
+                        "description": "delete user param",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/message.DeleteUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.ApiResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/ping": {
+            "get": {
+                "description": "Ping",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ping"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.ApiResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/user": {
+            "get": {
+                "description": "Add a User",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "parameters": [
+                    {
+                        "description": "list user param",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/message.ListUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.ApiResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "message.AddUserRequest": {
+            "type": "object",
+            "required": [
+                "password",
+                "username"
+            ],
+            "properties": {
+                "password": {
+                    "description": "密码",
+                    "type": "string",
+                    "maxLength": 20,
+                    "minLength": 8
+                },
+                "username": {
+                    "description": "用户名",
+                    "type": "string",
+                    "maxLength": 32
+                }
+            }
+        },
+        "message.DeleteUserRequest": {
+            "type": "object",
+            "required": [
+                "username"
+            ],
+            "properties": {
+                "username": {
+                    "description": "用户名",
+                    "type": "string",
+                    "maxLength": 32
+                }
+            }
+        },
+        "message.ListUserRequest": {
+            "type": "object",
+            "properties": {
+                "orderBy": {
+                    "description": "排序方式[desc, asc]",
+                    "type": "string",
+                    "maxLength": 4,
+                    "example": "desc"
+                },
+                "pageNo": {
+                    "description": "当前页码",
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 1
+                },
+                "pageSize": {
+                    "description": "每页数量",
+                    "type": "integer",
+                    "maximum": 100,
+                    "minimum": 1,
+                    "example": 20
+                }
+            }
+        },
+        "message.ModifyUserRequest": {
+            "type": "object",
+            "required": [
+                "password",
+                "username"
+            ],
+            "properties": {
+                "password": {
+                    "description": "密码",
+                    "type": "string",
+                    "maxLength": 20,
+                    "minLength": 8
+                },
+                "username": {
+                    "description": "用户名",
+                    "type": "string",
+                    "maxLength": 32
+                }
+            }
+        },
+        "response.ApiResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {},
+                "message": {
+                    "type": "string"
                 }
             }
         }

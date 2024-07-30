@@ -10,16 +10,12 @@ import (
 
 func PingGet(c *gin.Context, e *env.Env) {
 	ping := controller.NewPing()
-	ping.PingGet(c, e)
-	c.JSON(http.StatusOK, gin.H{
-		"message": "get pong",
-	})
+	res := ping.PingGet(c, e)
+	c.JSON(http.StatusOK, res)
 }
 
 func PingPost(c *gin.Context, e *env.Env) {
 	ping := controller.NewPing()
-	ping.PingPost(c, e)
-	c.JSON(http.StatusOK, gin.H{
-		"message": "post pong",
-	})
+	res := ping.PingPost(c, e)
+	c.JSON(http.StatusOK, res)
 }
