@@ -24,10 +24,10 @@ func Run() {
 }
 
 func InitApi() {
-	apiRouter = gin.New()
-
 	gin.DefaultWriter = log.StandardLogger().Out
 	gin.DefaultErrorWriter = log.StandardLogger().Out
+
+	apiRouter = gin.New()
 
 	env.SetupTranslations()
 

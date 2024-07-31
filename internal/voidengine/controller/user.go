@@ -22,6 +22,7 @@ func NewUser() *User {
 // @Tags User
 // @Accept json
 // @Produce json
+// @Param Accept-Language header string false "Language" default(zh)
 // @param user query message.ListUserRequest true "list user param"
 // @Success 200 {object} response.ApiResponse
 // @Failure 400 {object} response.ApiResponse
@@ -41,6 +42,7 @@ func (u *User) ListUser(c *gin.Context, e *env.Env) *response.ApiResponse {
 // @Tags User
 // @Accept json
 // @Produce json
+// @Param Accept-Language header string false "Language" default(zh)
 // @param user body message.AddUserRequest true "add user param"
 // @Success 200 {object} response.ApiResponse
 // @Failure 400 {object} response.ApiResponse
@@ -59,6 +61,7 @@ func (u *User) AddUser(c *gin.Context, e *env.Env) *response.ApiResponse {
 // @Tags User
 // @Accept json
 // @Produce json
+// @Param Accept-Language header string false "Language" default(zh)
 // @param user body message.ModifyUserRequest true "modify user param"
 // @Success 200 {object} response.ApiResponse
 // @Failure 400 {object} response.ApiResponse
@@ -78,6 +81,7 @@ func (u *User) ModifyUser(c *gin.Context, e *env.Env) *response.ApiResponse {
 // @Tags User
 // @Accept json
 // @Produce json
+// @Param Accept-Language header string false "Language" default(zh)
 // @param user body message.DeleteUserRequest true "delete user param"
 // @Success 200 {object} response.ApiResponse
 // @Failure 400 {object} response.ApiResponse

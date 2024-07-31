@@ -15,4 +15,11 @@ package voidengine
 // @host 这里写接口服务的host
 // @BasePath 这里写base path
 
-// @Param Accept-Language header string false "language"
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name Authorization
+
+// @accept json
+// @produce json
+
+// @Param Accept-Language header string false "Language" default(zh)

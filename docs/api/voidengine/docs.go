@@ -6,6 +6,12 @@ import "github.com/swaggo/swag"
 
 const docTemplate = `{
     "schemes": {{ marshal .Schemes }},
+    "consumes": [
+        "application/json"
+    ],
+    "produces": [
+        "application/json"
+    ],
     "swagger": "2.0",
     "info": {
         "description": "{{escape .Description}}",
@@ -61,6 +67,13 @@ const docTemplate = `{
                 ],
                 "parameters": [
                     {
+                        "type": "string",
+                        "default": "zh",
+                        "description": "Language",
+                        "name": "Accept-Language",
+                        "in": "header"
+                    },
+                    {
                         "maxLength": 4,
                         "type": "string",
                         "example": "desc",
@@ -114,6 +127,13 @@ const docTemplate = `{
                 ],
                 "parameters": [
                     {
+                        "type": "string",
+                        "default": "zh",
+                        "description": "Language",
+                        "name": "Accept-Language",
+                        "in": "header"
+                    },
+                    {
                         "description": "modify user param",
                         "name": "user",
                         "in": "body",
@@ -151,6 +171,13 @@ const docTemplate = `{
                 ],
                 "parameters": [
                     {
+                        "type": "string",
+                        "default": "zh",
+                        "description": "Language",
+                        "name": "Accept-Language",
+                        "in": "header"
+                    },
+                    {
                         "description": "add user param",
                         "name": "user",
                         "in": "body",
@@ -187,6 +214,13 @@ const docTemplate = `{
                     "User"
                 ],
                 "parameters": [
+                    {
+                        "type": "string",
+                        "default": "zh",
+                        "description": "Language",
+                        "name": "Accept-Language",
+                        "in": "header"
+                    },
                     {
                         "description": "delete user param",
                         "name": "user",
@@ -279,6 +313,13 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        }
+    },
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`
