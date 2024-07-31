@@ -17,9 +17,84 @@
     "host": "这里写接口服务的host",
     "basePath": "这里写base path",
     "paths": {
-        "/v1//user": {
+        "/v1/ping": {
+            "get": {
+                "description": "Ping",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ping"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.ApiResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/user": {
+            "get": {
+                "description": "List Users",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "parameters": [
+                    {
+                        "maxLength": 4,
+                        "type": "string",
+                        "example": "desc",
+                        "description": "排序方式[desc, asc]",
+                        "name": "orderBy",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "example": 1,
+                        "description": "当前页码",
+                        "name": "pageNo",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "example": 20,
+                        "description": "每页数量",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.ApiResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ApiResponse"
+                        }
+                    }
+                }
+            },
             "put": {
-                "description": "Add a User",
+                "description": "Modify a User",
                 "consumes": [
                     "application/json"
                 ],
@@ -43,6 +118,12 @@
                 "responses": {
                     "200": {
                         "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.ApiResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/response.ApiResponse"
                         }
@@ -77,6 +158,12 @@
                         "schema": {
                             "$ref": "#/definitions/response.ApiResponse"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ApiResponse"
+                        }
                     }
                 }
             },
@@ -108,58 +195,9 @@
                         "schema": {
                             "$ref": "#/definitions/response.ApiResponse"
                         }
-                    }
-                }
-            }
-        },
-        "/v1/ping": {
-            "get": {
-                "description": "Ping",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "ping"
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/response.ApiResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/user": {
-            "get": {
-                "description": "Add a User",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "User"
-                ],
-                "parameters": [
-                    {
-                        "description": "list user param",
-                        "name": "user",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/message.ListUserRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/response.ApiResponse"
                         }
@@ -199,30 +237,6 @@
                     "description": "用户名",
                     "type": "string",
                     "maxLength": 32
-                }
-            }
-        },
-        "message.ListUserRequest": {
-            "type": "object",
-            "properties": {
-                "orderBy": {
-                    "description": "排序方式[desc, asc]",
-                    "type": "string",
-                    "maxLength": 4,
-                    "example": "desc"
-                },
-                "pageNo": {
-                    "description": "当前页码",
-                    "type": "integer",
-                    "minimum": 1,
-                    "example": 1
-                },
-                "pageSize": {
-                    "description": "每页数量",
-                    "type": "integer",
-                    "maximum": 100,
-                    "minimum": 1,
-                    "example": 20
                 }
             }
         },

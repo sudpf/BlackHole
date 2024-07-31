@@ -19,8 +19,9 @@ func (r *ApiResponse) WithData(data interface{}) *ApiResponse {
  * 每个模块同样保留100个错误码
  */
 var (
-	ApiSuccess   = &ApiResponse{Code: 0, Message: "Success"}
-	InvalidParam = &ApiResponse{Code: 1, Message: "Invalid Param"}
+	ApiSuccess    = &ApiResponse{Code: 0, Message: "Success"}
+	ApiNotFound   = &ApiResponse{Code: 1, Message: "Api not found"}
+	InvalidParams = &ApiResponse{Code: 2, Message: "Invalid params"}
 
 	InvalidUserName = &ApiResponse{Code: 100001, Message: "Invalid UserName"}
 	UserErrorEnd    = &ApiResponse{Code: 100100, Message: "User Error end"}

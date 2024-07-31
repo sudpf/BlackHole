@@ -5,6 +5,8 @@ import (
 	"BlackHole/api/router"
 	"BlackHole/api/swagger"
 	"BlackHole/docs/api/voidengine"
+	"BlackHole/internal/voidengine/response"
+	"BlackHole/pkg/env"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -27,13 +29,12 @@ func InitApi() {
 	gin.DefaultWriter = log.StandardLogger().Out
 	gin.DefaultErrorWriter = log.StandardLogger().Out
 
+	env.SetupTranslations()
+
 	middleware.ApiLogMiddlewares(apiRouter)
 
 	apiRouter.NoRoute(func(c *gin.Context) {
-		c.JSON(http.StatusNotFound, gin.H{
-			"status":  "error",
-			"message": "Page not found",
-		})
+		c.JSON(http.StatusNotFound, response.InvalidParams)
 	})
 
 	swagger.SwaggerGenerator(apiRouter)
@@ -41,7 +42,7 @@ func InitApi() {
 	voidengine.SwaggerInfo.Version = "v1"
 	voidengine.SwaggerInfo.Description = "API 文档"
 	voidengine.SwaggerInfo.Host = "127.0.0.1:8080"
-	voidengine.SwaggerInfo.BasePath = "/v1"
+	voidengine.SwaggerInfo.BasePath = "/"
 	apiRouter.Static("/voidengine", "docs/api/voidengine")
 
 	for groupStr, routes := range apiRoutes {

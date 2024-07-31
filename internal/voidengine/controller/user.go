@@ -18,17 +18,18 @@ func NewUser() *User {
 }
 
 // ListUser
-// @Description Add a User
+// @Description List Users
 // @Tags User
 // @Accept json
 // @Produce json
-// @param user body message.ListUserRequest true "list user param"
+// @param user query message.ListUserRequest true "list user param"
 // @Success 200 {object} response.ApiResponse
+// @Failure 400 {object} response.ApiResponse
 // @Router /v1/user [get]
 func (u *User) ListUser(c *gin.Context, e *env.Env) *response.ApiResponse {
 	var request message.ListUserRequest
-	if err := c.ShouldBind(&request); err != nil {
-		return response.InvalidParam
+	if err := c.ShouldBindQuery(&request); err != nil {
+		return response.InvalidParams.WithData(e.TranslatErrors(err))
 	}
 	log.Info(request)
 
@@ -42,28 +43,30 @@ func (u *User) ListUser(c *gin.Context, e *env.Env) *response.ApiResponse {
 // @Produce json
 // @param user body message.AddUserRequest true "add user param"
 // @Success 200 {object} response.ApiResponse
-// @Router /v1//user [post]
+// @Failure 400 {object} response.ApiResponse
+// @Router /v1/user [post]
 func (u *User) AddUser(c *gin.Context, e *env.Env) *response.ApiResponse {
 	var request message.AddUserRequest
 	if err := c.ShouldBind(&request); err != nil {
-		return response.InvalidParam
+		return response.InvalidParams.WithData(e.TranslatErrors(err))
 	}
 	log.Info(request)
 	return response.ApiSuccess
 }
 
 // ModifyUser
-// @Description Add a User
+// @Description Modify a User
 // @Tags User
 // @Accept json
 // @Produce json
 // @param user body message.ModifyUserRequest true "modify user param"
 // @Success 200 {object} response.ApiResponse
-// @Router /v1//user [put]
+// @Failure 400 {object} response.ApiResponse
+// @Router /v1/user [put]
 func (u *User) ModifyUser(c *gin.Context, e *env.Env) *response.ApiResponse {
 	var request message.ModifyUserRequest
 	if err := c.ShouldBind(&request); err != nil {
-		return response.InvalidParam
+		return response.InvalidParams.WithData(e.TranslatErrors(err))
 	}
 	log.Info(request)
 
@@ -77,11 +80,12 @@ func (u *User) ModifyUser(c *gin.Context, e *env.Env) *response.ApiResponse {
 // @Produce json
 // @param user body message.DeleteUserRequest true "delete user param"
 // @Success 200 {object} response.ApiResponse
-// @Router /v1//user [delete]
+// @Failure 400 {object} response.ApiResponse
+// @Router /v1/user [delete]
 func (u *User) DeleteUser(c *gin.Context, e *env.Env) *response.ApiResponse {
 	var request message.DeleteUserRequest
 	if err := c.ShouldBind(&request); err != nil {
-		return response.InvalidParam
+		return response.InvalidParams.WithData(e.TranslatErrors(err))
 	}
 	log.Info(request)
 

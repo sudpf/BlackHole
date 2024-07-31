@@ -24,25 +24,6 @@ definitions:
     required:
     - username
     type: object
-  message.ListUserRequest:
-    properties:
-      orderBy:
-        description: 排序方式[desc, asc]
-        example: desc
-        maxLength: 4
-        type: string
-      pageNo:
-        description: 当前页码
-        example: 1
-        minimum: 1
-        type: integer
-      pageSize:
-        description: 每页数量
-        example: 20
-        maximum: 100
-        minimum: 1
-        type: integer
-    type: object
   message.ModifyUserRequest:
     properties:
       password:
@@ -79,7 +60,21 @@ info:
   termsOfService: http://swagger.io/terms/
   title: '"API 文档"'
 paths:
-  /v1//user:
+  /v1/ping:
+    get:
+      consumes:
+      - application/json
+      description: Ping
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+      tags:
+      - ping
+  /v1/user:
     delete:
       consumes:
       - application/json
@@ -96,6 +91,47 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+      tags:
+      - User
+    get:
+      consumes:
+      - application/json
+      description: List Users
+      parameters:
+      - description: 排序方式[desc, asc]
+        example: desc
+        in: query
+        maxLength: 4
+        name: orderBy
+        type: string
+      - description: 当前页码
+        example: 1
+        in: query
+        minimum: 1
+        name: pageNo
+        type: integer
+      - description: 每页数量
+        example: 20
+        in: query
+        maximum: 100
+        minimum: 1
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+        "400":
+          description: Bad Request
           schema:
             $ref: '#/definitions/response.ApiResponse'
       tags:
@@ -118,12 +154,16 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/response.ApiResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
       tags:
       - User
     put:
       consumes:
       - application/json
-      description: Add a User
+      description: Modify a User
       parameters:
       - description: modify user param
         in: body
@@ -138,39 +178,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/response.ApiResponse'
-      tags:
-      - User
-  /v1/ping:
-    get:
-      consumes:
-      - application/json
-      description: Ping
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/response.ApiResponse'
-      tags:
-      - ping
-  /v1/user:
-    get:
-      consumes:
-      - application/json
-      description: Add a User
-      parameters:
-      - description: list user param
-        in: body
-        name: user
-        required: true
-        schema:
-          $ref: '#/definitions/message.ListUserRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
+        "400":
+          description: Bad Request
           schema:
             $ref: '#/definitions/response.ApiResponse'
       tags:
