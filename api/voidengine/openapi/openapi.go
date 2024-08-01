@@ -30,6 +30,7 @@ func InitApi() {
 	apiRouter = gin.New()
 
 	env.SetupTranslations()
+	env.InitLocalizer()
 
 	middleware.ApiLogMiddlewares(apiRouter)
 

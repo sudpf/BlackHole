@@ -2,6 +2,7 @@ package env
 
 import (
 	"BlackHole/pkg/constant"
+	"BlackHole/pkg/locales"
 	"fmt"
 	"reflect"
 	"strings"
@@ -13,10 +14,14 @@ import (
 	"github.com/go-playground/validator/v10"
 	enTranslations "github.com/go-playground/validator/v10/translations/en"
 	zhTranslations "github.com/go-playground/validator/v10/translations/zh"
+	"github.com/nicksnyder/go-i18n/v2/i18n"
+	"golang.org/x/text/language"
 )
 
 var (
-	uni *ut.UniversalTranslator
+	localizerZh *i18n.Localizer
+	localizerEn *i18n.Localizer
+	uni         *ut.UniversalTranslator
 )
 
 func SetupTranslations() error {
@@ -55,6 +60,29 @@ func SetupTranslations() error {
 	return nil
 }
 
+func InitLocalizer() {
+	// 创建一个新的 i18n bundle
+	bundle := i18n.NewBundle(language.English)
+
+	// 加载翻译到 bundle 中
+	for id, translation := range locales.EnTranslations {
+		bundle.AddMessages(language.English, &i18n.Message{
+			ID:    id,
+			Other: translation,
+		})
+	}
+
+	for id, translation := range locales.ZhTranslations {
+		bundle.AddMessages(language.Chinese, &i18n.Message{
+			ID:    id,
+			Other: translation,
+		})
+	}
+
+	localizerZh = i18n.NewLocalizer(bundle, "zh")
+	localizerEn = i18n.NewLocalizer(bundle, "en")
+}
+
 type Env struct {
 	Lang      string
 	ClientIp  string
@@ -81,4 +109,16 @@ func (ev *Env) TranslatErrors(err error) map[string]string {
 	errs, _ := err.(validator.ValidationErrors)
 
 	return removeTopStruct(errs.Translate(ev.Trans))
+}
+
+func (ev *Env) MustLocalize(message string) string {
+	if ev.Lang == constant.LangChinese {
+		return localizerZh.MustLocalize(&i18n.LocalizeConfig{
+			MessageID: message,
+		})
+	}
+
+	return localizerEn.MustLocalize(&i18n.LocalizeConfig{
+		MessageID: message,
+	})
 }

@@ -30,7 +30,7 @@ func NewUser() *User {
 func (u *User) ListUser(c *gin.Context, e *env.Env) *response.ApiResponse {
 	var request message.ListUserRequest
 	if err := c.ShouldBindQuery(&request); err != nil {
-		return response.InvalidParams.WithData(e.TranslatErrors(err))
+		return response.InvalidParams.Tr(e).WithData(e.TranslatErrors(err))
 	}
 	log.Info(request)
 
@@ -50,7 +50,7 @@ func (u *User) ListUser(c *gin.Context, e *env.Env) *response.ApiResponse {
 func (u *User) AddUser(c *gin.Context, e *env.Env) *response.ApiResponse {
 	var request message.AddUserRequest
 	if err := c.ShouldBind(&request); err != nil {
-		return response.InvalidParams.WithData(e.TranslatErrors(err))
+		return response.InvalidParams.Tr(e).WithData(e.TranslatErrors(err))
 	}
 	log.Info(request)
 	return response.ApiSuccess
@@ -69,7 +69,7 @@ func (u *User) AddUser(c *gin.Context, e *env.Env) *response.ApiResponse {
 func (u *User) ModifyUser(c *gin.Context, e *env.Env) *response.ApiResponse {
 	var request message.ModifyUserRequest
 	if err := c.ShouldBind(&request); err != nil {
-		return response.InvalidParams.WithData(e.TranslatErrors(err))
+		return response.InvalidParams.Tr(e).WithData(e.TranslatErrors(err))
 	}
 	log.Info(request)
 
@@ -89,7 +89,7 @@ func (u *User) ModifyUser(c *gin.Context, e *env.Env) *response.ApiResponse {
 func (u *User) DeleteUser(c *gin.Context, e *env.Env) *response.ApiResponse {
 	var request message.DeleteUserRequest
 	if err := c.ShouldBind(&request); err != nil {
-		return response.InvalidParams.WithData(e.TranslatErrors(err))
+		return response.InvalidParams.Tr(e).WithData(e.TranslatErrors(err))
 	}
 	log.Info(request)
 
