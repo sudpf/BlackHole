@@ -33,8 +33,8 @@ func (p *PostgreSQLDatabase) Close() error {
 	return sqlDB.Close()
 }
 
-func (p *PostgreSQLDatabase) CreateTable(model interface{}) error {
-	return p.DB.AutoMigrate(model)
+func (p *PostgreSQLDatabase) CreateTable(model ...interface{}) error {
+	return p.DB.AutoMigrate(model...)
 }
 
 func (p *PostgreSQLDatabase) CreateDatabase() error {

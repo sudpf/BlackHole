@@ -7,6 +7,7 @@ import (
 
 	mysqlParser "github.com/go-sql-driver/mysql"
 	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"gopkg.in/natefinch/lumberjack.v2"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -47,12 +48,8 @@ func (m *MySQLDatabase) Close() error {
 	return sqlDB.Close()
 }
 
-func (m *MySQLDatabase) AutoMigrate(dst ...interface{}) error {
-	return m.DB.AutoMigrate(dst...)
-}
-
-func (m *MySQLDatabase) CreateTable(model interface{}) error {
-	return m.DB.AutoMigrate(model)
+func (m *MySQLDatabase) CreateTable(model ...interface{}) error {
+	return m.DB.AutoMigrate(model...)
 }
 
 func (m *MySQLDatabase) CreateDatabase() error {
@@ -61,6 +58,7 @@ func (m *MySQLDatabase) CreateDatabase() error {
 		return err
 	}
 
+	log.Info(dbConfig)
 	dbExist, err := MySQLDatabaseExist(dbConfig.Addr, dbConfig.User, dbConfig.Passwd, dbConfig.DBName)
 	if err != nil {
 		return err
@@ -72,6 +70,7 @@ func (m *MySQLDatabase) CreateDatabase() error {
 
 	db, err := sql.Open("mysql", fmt.Sprintf("%s:%s@tcp(%s)/", dbConfig.User, dbConfig.Passwd, dbConfig.Addr))
 	if err != nil {
+		log.Info(err)
 		return err
 	}
 	defer db.Close()
@@ -88,6 +87,7 @@ func (m *MySQLDatabase) Query(model interface{}, conditions map[string]interface
 func NewMySQLDatabase(connectionString string, debug bool, logFile string) (*MySQLDatabase, error) {
 	db := &MySQLDatabase{debug: debug, logFile: logFile, link: connectionString}
 	if err := db.CreateDatabase(); err != nil {
+		log.Errorf("create database error:", err)
 		return nil, err
 	}
 

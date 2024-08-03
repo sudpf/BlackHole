@@ -33,8 +33,8 @@ func (c *ClickHouseDatabase) Close() error {
 	return sqlDB.Close()
 }
 
-func (c *ClickHouseDatabase) CreateTable(model interface{}) error {
-	return c.DB.AutoMigrate(model)
+func (c *ClickHouseDatabase) CreateTable(model ...interface{}) error {
+	return c.DB.AutoMigrate(model...)
 }
 
 func (c *ClickHouseDatabase) CreateDatabase() error {

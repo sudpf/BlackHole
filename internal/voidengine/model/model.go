@@ -11,7 +11,7 @@ func InitDB(databaseConfig config.DatabaseConfig) error {
 		if err != nil {
 			panic(err)
 		}
-		mysqlDB.AutoMigrate(&User{})
+		mysqlDB.CreateTable(&User{})
 	}
 
 	if databaseConfig.ClickHouse != nil {

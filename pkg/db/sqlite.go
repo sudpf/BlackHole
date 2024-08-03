@@ -32,8 +32,8 @@ func (s *SQLiteDatabase) Close() error {
 	return sqlDB.Close()
 }
 
-func (s *SQLiteDatabase) CreateTable(model interface{}) error {
-	return s.DB.AutoMigrate(model)
+func (s *SQLiteDatabase) CreateTable(model ...interface{}) error {
+	return s.DB.AutoMigrate(model...)
 }
 
 func (s *SQLiteDatabase) CreateDatabase() error {
