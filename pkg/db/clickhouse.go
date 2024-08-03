@@ -10,7 +10,6 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 	clickhouse "gorm.io/driver/clickhouse"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
 type ClickHouseDatabase struct {
@@ -21,7 +20,19 @@ type ClickHouseDatabase struct {
 }
 
 func (c *ClickHouseDatabase) Connect(connectionString string) (*gorm.DB, error) {
-	db, err := gorm.Open(clickhouse.Open(connectionString), &gorm.Config{})
+	var la *logrusAdapter
+	if c.debug {
+		logger := logrus.New()
+		logger.SetOutput(&lumberjack.Logger{
+			Filename: config.GetVoidEngineConfig().LogDir() + "/" + c.logFile,
+			Compress: true,
+		})
+		logger.SetFormatter(&CustomFormatter{})
+		logger.SetLevel(logrus.DebugLevel)
+		la = NewLogrusAdapter(logger)
+	}
+
+	db, err := gorm.Open(clickhouse.Open(connectionString), &gorm.Config{Logger: la})
 	if err != nil {
 		log.Info(err)
 		return nil, err
@@ -43,14 +54,16 @@ func (c *ClickHouseDatabase) CreateTable(model ...interface{}) error {
 }
 
 func (c *ClickHouseDatabase) CreateDatabase() error {
-	var logger logger.Interface
+	var la *logrusAdapter
 	if c.debug {
 		logger := logrus.New()
 		logger.SetOutput(&lumberjack.Logger{
 			Filename: config.GetVoidEngineConfig().LogDir() + "/" + c.logFile,
 			Compress: true,
 		})
-		logger.SetFormatter(&logrus.JSONFormatter{})
+		logger.SetFormatter(&CustomFormatter{})
+		logger.SetLevel(logrus.DebugLevel)
+		la = NewLogrusAdapter(logger)
 	}
 
 	// 解析 DSN
@@ -59,10 +72,10 @@ func (c *ClickHouseDatabase) CreateDatabase() error {
 		log.Fatalf("failed to parse DSN: %v", err)
 	}
 
-	dsn := fmt.Sprintf("tcp://%s?debug=true&username=%s&password=%s&read_timeout=10s",
+	dsn := fmt.Sprintf("tcp://%s?username=%s&password=%s&read_timeout=10s",
 		connParams.Addr[0], connParams.Auth.Username, connParams.Auth.Password)
 	log.Info(dsn)
-	db, err := gorm.Open(clickhouse.Open(dsn), &gorm.Config{Logger: logger})
+	db, err := gorm.Open(clickhouse.Open(dsn), &gorm.Config{Logger: la})
 	if err != nil {
 		log.Fatalf("failed to connect to ClickHouse: %v", err)
 	}
@@ -78,6 +91,18 @@ func (c *ClickHouseDatabase) CreateDatabase() error {
 func (c *ClickHouseDatabase) Query(model interface{}, conditions map[string]interface{}) (*gorm.DB, error) {
 	query := c.DB.Where(conditions).Find(model)
 	return query, query.Error
+}
+
+func (c *ClickHouseDatabase) Insert(model interface{}) error {
+	return c.DB.Create(model).Error
+}
+
+func (c *ClickHouseDatabase) Update(model interface{}, conditions map[string]interface{}) error {
+	return c.DB.Model(model).Where(conditions).Updates(model).Error
+}
+
+func (c *ClickHouseDatabase) Delete(model interface{}, conditions map[string]interface{}) error {
+	return c.DB.Where(conditions).Delete(model).Error
 }
 
 func NewClickHouseDatabase(connectionString string, debug bool, logFile string) (*ClickHouseDatabase, error) {

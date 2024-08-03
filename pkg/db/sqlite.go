@@ -59,6 +59,18 @@ func (s *SQLiteDatabase) Query(model interface{}, conditions map[string]interfac
 	return query, query.Error
 }
 
+func (s *SQLiteDatabase) Insert(model interface{}) error {
+	return s.DB.Create(model).Error
+}
+
+func (s *SQLiteDatabase) Update(model interface{}, conditions map[string]interface{}) error {
+	return s.DB.Model(model).Where(conditions).Updates(model).Error
+}
+
+func (s *SQLiteDatabase) Delete(model interface{}, conditions map[string]interface{}) error {
+	return s.DB.Where(conditions).Delete(model).Error
+}
+
 func NewSQLiteDatabase(connectionString string, logLevel string, logFile string) (*SQLiteDatabase, error) {
 	db := &SQLiteDatabase{logLevel: logLevel, logFile: logFile, link: connectionString}
 	sqliteDb, err := db.Connect(connectionString)

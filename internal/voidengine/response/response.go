@@ -28,6 +28,7 @@ var (
 	ApiSuccess    = &ApiResponse{Code: 0, Message: "Success"}
 	ApiNotFound   = &ApiResponse{Code: 1, Message: "Api not found"}
 	InvalidParams = &ApiResponse{Code: 2, Message: "Invalid params"}
+	SytemError    = &ApiResponse{Code: 3, Message: "System error"}
 
 	InvalidUserName = &ApiResponse{Code: 100001, Message: "Invalid UserName"}
 	UserErrorEnd    = &ApiResponse{Code: 100100, Message: "User Error end"}

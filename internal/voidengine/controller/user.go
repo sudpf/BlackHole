@@ -2,6 +2,7 @@ package controller
 
 import (
 	"BlackHole/internal/voidengine/message"
+	"BlackHole/internal/voidengine/model"
 	"BlackHole/internal/voidengine/response"
 	"BlackHole/pkg/env"
 
@@ -34,7 +35,13 @@ func (u *User) ListUser(c *gin.Context, e *env.Env) *response.ApiResponse {
 	}
 	log.Info(request)
 
-	return response.ApiSuccess
+	var users []model.User
+
+	if _, err := model.ControlPlanDB().Query(&users, map[string]interface{}{}); err != nil {
+		return response.SytemError
+	}
+
+	return response.ApiSuccess.WithData(users)
 }
 
 // AddUser
@@ -53,6 +60,15 @@ func (u *User) AddUser(c *gin.Context, e *env.Env) *response.ApiResponse {
 		return response.InvalidParams.Tr(e).WithData(e.TranslatErrors(err))
 	}
 	log.Info(request)
+
+	user := &model.User{
+		Name:     request.Username,
+		Password: request.Password,
+	}
+
+	if err := model.ControlPlanDB().Insert(user); err != nil {
+		return response.SytemError
+	}
 	return response.ApiSuccess
 }
 
@@ -73,6 +89,11 @@ func (u *User) ModifyUser(c *gin.Context, e *env.Env) *response.ApiResponse {
 	}
 	log.Info(request)
 
+	user := &model.User{}
+
+	if err := model.ControlPlanDB().Update(user, nil); err != nil {
+		return response.SytemError
+	}
 	return response.ApiSuccess
 }
 
@@ -93,5 +114,10 @@ func (u *User) DeleteUser(c *gin.Context, e *env.Env) *response.ApiResponse {
 	}
 	log.Info(request)
 
+	user := &model.User{}
+
+	if err := model.ControlPlanDB().Delete(user, nil); err != nil {
+		return response.SytemError
+	}
 	return response.ApiSuccess
 }

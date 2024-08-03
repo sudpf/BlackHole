@@ -5,13 +5,21 @@ import (
 	"BlackHole/pkg/db"
 )
 
+var (
+	cpDB *db.MySQLDatabase
+	dpDB *db.ClickHouseDatabase
+)
+
 func InitDB(databaseConfig config.DatabaseConfig) error {
 	if databaseConfig.MySQL != nil {
 		mysqlDB, err := db.NewMySQLDatabase(databaseConfig.MySQL.Link, databaseConfig.MySQL.Debug, databaseConfig.MySQL.Log)
 		if err != nil {
 			panic(err)
 		}
-		mysqlDB.CreateTable(&User{})
+		if err := mysqlDB.CreateTable(&User{}); err != nil {
+			panic(err)
+		}
+		cpDB = mysqlDB
 	}
 
 	if databaseConfig.ClickHouse != nil {
@@ -20,7 +28,16 @@ func InitDB(databaseConfig config.DatabaseConfig) error {
 			panic(err)
 		}
 		ckDB.CreateTable(&User{})
+		dpDB = ckDB
 	}
 
 	return nil
+}
+
+func ControlPlanDB() *db.MySQLDatabase {
+	return cpDB
+}
+
+func DataPlanDB() *db.ClickHouseDatabase {
+	return dpDB
 }

@@ -11,3 +11,11 @@ type ListResponseBase struct {
 	Total int         `json:"total" example:"20"` // 总数
 	Data  interface{} `json:"data,omitempty"`
 }
+
+func (qb *ListQueryBase) SetDefaultQueryBase() *ListQueryBase {
+	qb.PageNo = 1
+	qb.PageSize = 50
+	qb.OrderBy = "desc"
+
+	return qb
+}

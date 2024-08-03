@@ -11,7 +11,6 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
 type MySQLDatabase struct {
@@ -22,17 +21,18 @@ type MySQLDatabase struct {
 }
 
 func (m *MySQLDatabase) Connect(connectionString string) (*gorm.DB, error) {
-	var logger logger.Interface
+	var la *logrusAdapter
 	if m.debug {
 		logger := logrus.New()
 		logger.SetOutput(&lumberjack.Logger{
 			Filename: config.GetVoidEngineConfig().LogDir() + "/" + m.logFile,
 			Compress: true,
 		})
-		logger.SetFormatter(&logrus.JSONFormatter{})
+		logger.SetFormatter(&CustomFormatter{})
+		la = NewLogrusAdapter(logger)
 	}
 
-	db, err := gorm.Open(mysql.Open(connectionString), &gorm.Config{Logger: logger})
+	db, err := gorm.Open(mysql.Open(connectionString), &gorm.Config{Logger: la})
 	if err != nil {
 		return nil, err
 	}
@@ -82,6 +82,18 @@ func (m *MySQLDatabase) CreateDatabase() error {
 func (m *MySQLDatabase) Query(model interface{}, conditions map[string]interface{}) (*gorm.DB, error) {
 	query := m.DB.Where(conditions).Find(model)
 	return query, query.Error
+}
+
+func (m *MySQLDatabase) Insert(model interface{}) error {
+	return m.DB.Create(model).Error
+}
+
+func (m *MySQLDatabase) Update(model interface{}, conditions map[string]interface{}) error {
+	return m.DB.Model(model).Where(conditions).Updates(model).Error
+}
+
+func (m *MySQLDatabase) Delete(model interface{}, conditions map[string]interface{}) error {
+	return m.DB.Where(conditions).Delete(model).Error
 }
 
 func NewMySQLDatabase(connectionString string, debug bool, logFile string) (*MySQLDatabase, error) {

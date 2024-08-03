@@ -67,6 +67,18 @@ func (p *PostgreSQLDatabase) Query(model interface{}, conditions map[string]inte
 	return query, query.Error
 }
 
+func (p *PostgreSQLDatabase) Insert(model interface{}) error {
+	return p.DB.Create(model).Error
+}
+
+func (p *PostgreSQLDatabase) Update(model interface{}, conditions map[string]interface{}) error {
+	return p.DB.Model(model).Where(conditions).Updates(model).Error
+}
+
+func (p *PostgreSQLDatabase) Delete(model interface{}, conditions map[string]interface{}) error {
+	return p.DB.Where(conditions).Delete(model).Error
+}
+
 func NewPostgreSQLDatabase(connectionString string, logLevel string, logFile string) (*PostgreSQLDatabase, error) {
 	db := &PostgreSQLDatabase{logLevel: logLevel, logFile: logFile, link: connectionString}
 
