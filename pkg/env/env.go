@@ -2,7 +2,6 @@ package env
 
 import (
 	"BlackHole/pkg/constant"
-	"BlackHole/pkg/locales"
 	"fmt"
 	"reflect"
 	"strings"
@@ -60,19 +59,19 @@ func SetupTranslations() error {
 	return nil
 }
 
-func InitLocalizer() {
+func InitLocalizer(enTranslations, zhTranslations map[string]string) {
 	// 创建一个新的 i18n bundle
 	bundle := i18n.NewBundle(language.English)
 
 	// 加载翻译到 bundle 中
-	for id, translation := range locales.EnTranslations {
+	for id, translation := range enTranslations {
 		bundle.AddMessages(language.English, &i18n.Message{
 			ID:    id,
 			Other: translation,
 		})
 	}
 
-	for id, translation := range locales.ZhTranslations {
+	for id, translation := range zhTranslations {
 		bundle.AddMessages(language.Chinese, &i18n.Message{
 			ID:    id,
 			Other: translation,

@@ -27,6 +27,6 @@ func main() {
 	log.Info(config.GetVoidEngineConfig().String())
 
 	openapi.InitApi()
-	model.InitDB()
+	model.InitDB(config.GetVoidEngineConfig().Database)
 	openapi.Run()
 }

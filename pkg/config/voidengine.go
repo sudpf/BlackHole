@@ -45,6 +45,10 @@ func (c *VoidEngineConfig) LogLevel() string {
 	return c.Log.Level
 }
 
+func (c *VoidEngineConfig) LogDir() string {
+	return c.Log.Dir
+}
+
 func GetVoidEngineConfig() *VoidEngineConfig {
 	return &GlobalVoidEngineConfig
 }

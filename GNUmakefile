@@ -56,6 +56,7 @@ copy:
 
 clean:
 	rm -rf bin/*
+	go clean -modcache
 
 swagger-generator: fmt vendor
 	GOOS=${GOOS} GOARCH=${GOARCH} go build ${GFLAGS} -o bin/swagger-generator cmd/swagger-generator/main.go

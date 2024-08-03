@@ -1,26 +1,21 @@
 package model
 
 import (
-	"gorm.io/driver/mysql"
-	"gorm.io/gorm"
+	"BlackHole/pkg/config"
+	"BlackHole/pkg/db"
 )
 
-var (
-	db *gorm.DB
-)
-
-func InitDB() error {
-	return nil
-	// 初始化数据库
-	dsn := "root:password@tcp(127.0.0.1:3306)/dbname?charset=utf8mb4&parseTime=True&loc=Local"
-	var err error
-	db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
-	if err != nil {
-		panic("failed to connect database")
+func InitDB(databaseConfig config.DatabaseConfig) error {
+	if databaseConfig.MySQL != nil {
+		mysqlDB, err := db.NewMySQLDatabase(databaseConfig.MySQL.Link, databaseConfig.MySQL.Debug, databaseConfig.MySQL.Log)
+		if err != nil {
+			panic(err)
+		}
+		mysqlDB.AutoMigrate(&User{})
 	}
 
-	// 自动迁移模式
-	db.AutoMigrate(&User{})
+	if databaseConfig.ClickHouse != nil {
+	}
 
 	return nil
 }

@@ -24,6 +24,6 @@ type ClickHouseConfig struct {
 }
 
 type DatabaseConfig struct {
-	MySQL      []MySQLConfig      `toml:"mysql"`
-	ClickHouse []ClickHouseConfig `toml:"clickhouse"`
+	MySQL      *MySQLConfig      `toml:"mysql"`
+	ClickHouse *ClickHouseConfig `toml:"clickhouse"`
 }

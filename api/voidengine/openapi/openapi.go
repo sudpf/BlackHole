@@ -5,6 +5,7 @@ import (
 	"BlackHole/api/router"
 	"BlackHole/api/swagger"
 	"BlackHole/docs/api/voidengine"
+	"BlackHole/internal/voidengine/locales"
 	"BlackHole/internal/voidengine/response"
 	"BlackHole/pkg/env"
 	"net/http"
@@ -30,7 +31,7 @@ func InitApi() {
 	apiRouter = gin.New()
 
 	env.SetupTranslations()
-	env.InitLocalizer()
+	env.InitLocalizer(locales.EnTranslations, locales.ZhTranslations)
 
 	middleware.ApiLogMiddlewares(apiRouter)
 
