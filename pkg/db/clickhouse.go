@@ -1,24 +1,29 @@
 package db
 
 import (
-	"database/sql"
+	"BlackHole/pkg/config"
 	"fmt"
-	"net/url"
 
+	clickhouseParser "github.com/ClickHouse/clickhouse-go/v2"
+	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
+	"gopkg.in/natefinch/lumberjack.v2"
 	clickhouse "gorm.io/driver/clickhouse"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 type ClickHouseDatabase struct {
-	logLevel string
-	logFile  string
-	link     string
-	DB       *gorm.DB
+	debug   bool
+	logFile string
+	link    string
+	DB      *gorm.DB
 }
 
 func (c *ClickHouseDatabase) Connect(connectionString string) (*gorm.DB, error) {
 	db, err := gorm.Open(clickhouse.Open(connectionString), &gorm.Config{})
 	if err != nil {
+		log.Info(err)
 		return nil, err
 	}
 	c.DB = db
@@ -38,27 +43,34 @@ func (c *ClickHouseDatabase) CreateTable(model ...interface{}) error {
 }
 
 func (c *ClickHouseDatabase) CreateDatabase() error {
-	u, err := url.Parse(c.link)
+	var logger logger.Interface
+	if c.debug {
+		logger := logrus.New()
+		logger.SetOutput(&lumberjack.Logger{
+			Filename: config.GetVoidEngineConfig().LogDir() + "/" + c.logFile,
+			Compress: true,
+		})
+		logger.SetFormatter(&logrus.JSONFormatter{})
+	}
+
+	// 解析 DSN
+	connParams, err := clickhouseParser.ParseDSN(c.link)
 	if err != nil {
-		return err
+		log.Fatalf("failed to parse DSN: %v", err)
 	}
 
-	dbExist, err := ClickHouseDatabaseExist(fmt.Sprintf("%s:%d", u.Hostname(), u.Port), u.Query().Get("database"))
+	dsn := fmt.Sprintf("tcp://%s?debug=true&username=%s&password=%s&read_timeout=10s",
+		connParams.Addr[0], connParams.Auth.Username, connParams.Auth.Password)
+	log.Info(dsn)
+	db, err := gorm.Open(clickhouse.Open(dsn), &gorm.Config{Logger: logger})
 	if err != nil {
-		return err
+		log.Fatalf("failed to connect to ClickHouse: %v", err)
 	}
 
-	if dbExist {
-		return nil
+	// 使用原生 SQL 创建新数据库
+	if err := db.Exec(fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", connParams.Auth.Database)).Error; err != nil {
+		log.Fatalf("failed to create database: %v", err)
 	}
-
-	db, err := sql.Open("clickhouse", fmt.Sprintf("tcp://%s", fmt.Sprintf("%s:%d", u.Hostname(), u.Port)))
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-
-	_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s", u.Query().Get("database")))
 
 	return err
 }
@@ -68,8 +80,12 @@ func (c *ClickHouseDatabase) Query(model interface{}, conditions map[string]inte
 	return query, query.Error
 }
 
-func NewClickHouseDatabase(connectionString string, logLevel string, logFile string) (*ClickHouseDatabase, error) {
-	db := &ClickHouseDatabase{logLevel: logLevel, logFile: logFile, link: connectionString}
+func NewClickHouseDatabase(connectionString string, debug bool, logFile string) (*ClickHouseDatabase, error) {
+	db := &ClickHouseDatabase{debug: debug, logFile: logFile, link: connectionString}
+
+	if err := db.CreateDatabase(); err != nil {
+		return nil, err
+	}
 
 	clickhouseDb, err := db.Connect(connectionString)
 	if err != nil {
@@ -77,20 +93,4 @@ func NewClickHouseDatabase(connectionString string, logLevel string, logFile str
 	}
 	db.DB = clickhouseDb
 	return db, nil
-}
-
-func ClickHouseDatabaseExist(addr, database string) (bool, error) {
-	db, err := sql.Open("clickhouse", fmt.Sprintf("tcp://%s", addr))
-	if err != nil {
-		return false, err
-	}
-	defer db.Close()
-
-	rows, err := db.Query(fmt.Sprintf("SELECT name FROM system.databases WHERE name = '%s'", database))
-	if err != nil {
-		return false, err
-	}
-	defer rows.Close()
-
-	return rows.Next(), nil
 }

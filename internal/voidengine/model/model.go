@@ -15,6 +15,11 @@ func InitDB(databaseConfig config.DatabaseConfig) error {
 	}
 
 	if databaseConfig.ClickHouse != nil {
+		ckDB, err := db.NewClickHouseDatabase(databaseConfig.ClickHouse.Link, databaseConfig.ClickHouse.Debug, databaseConfig.ClickHouse.Log)
+		if err != nil {
+			panic(err)
+		}
+		ckDB.CreateTable(&User{})
 	}
 
 	return nil
