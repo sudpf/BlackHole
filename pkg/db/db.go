@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -15,6 +16,7 @@ type Database interface {
 	Close() error
 	CreateTable(model interface{}) error
 	Query(model interface{}, conditions map[string]interface{}) (*gorm.DB, error)
+	QueryEx(model interface{}, conditions interface{}) (*gorm.DB, error)
 	Insert(model interface{}) error
 	Update(model interface{}, conditions map[string]interface{}) error
 	Delete(model interface{}, conditions map[string]interface{}) error
@@ -88,4 +90,27 @@ func (f *CustomFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 		entry.Data["sql"],
 	)
 	return []byte(logMsg), nil
+}
+
+func StructToConditions(v interface{}) (map[string]interface{}, error) {
+	result := make(map[string]interface{})
+	value := reflect.ValueOf(v)
+	if value.Kind() != reflect.Struct {
+		return nil, fmt.Errorf("expected a struct but got %s", value.Kind())
+	}
+
+	typ := value.Type()
+	for i := 0; i < value.NumField(); i++ {
+		field := value.Field(i)
+		fieldName := typ.Field(i).Name
+
+		// 跳过零值
+		if field.IsZero() {
+			continue
+		}
+
+		// 添加到结果 map
+		result[fieldName] = field.Interface()
+	}
+	return result, nil
 }

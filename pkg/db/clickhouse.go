@@ -93,6 +93,16 @@ func (c *ClickHouseDatabase) Query(model interface{}, conditions map[string]inte
 	return query, query.Error
 }
 
+func (c *ClickHouseDatabase) QueryEx(model interface{}, conditions interface{}) (*gorm.DB, error) {
+	conditionMap, err := StructToConditions(conditions)
+	if err != nil {
+		return nil, err
+	}
+
+	query := c.DB.Where(conditionMap).Find(model)
+	return query, query.Error
+}
+
 func (c *ClickHouseDatabase) Insert(model interface{}) error {
 	return c.DB.Create(model).Error
 }

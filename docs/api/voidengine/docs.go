@@ -97,6 +97,12 @@ const docTemplate = `{
                         "description": "每页数量",
                         "name": "pageSize",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "用户名",
+                        "name": "username",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -251,54 +257,54 @@ const docTemplate = `{
     "definitions": {
         "message.AddUserRequest": {
             "type": "object",
-            "required": [
-                "password",
-                "username"
-            ],
             "properties": {
+                "email": {
+                    "type": "string"
+                },
                 "password": {
                     "description": "密码",
-                    "type": "string",
-                    "maxLength": 20,
-                    "minLength": 8
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "rePassword": {
+                    "type": "string"
                 },
                 "username": {
                     "description": "用户名",
-                    "type": "string",
-                    "maxLength": 32
+                    "type": "string"
                 }
             }
         },
         "message.DeleteUserRequest": {
             "type": "object",
-            "required": [
-                "username"
-            ],
             "properties": {
                 "username": {
                     "description": "用户名",
-                    "type": "string",
-                    "maxLength": 32
+                    "type": "string"
                 }
             }
         },
         "message.ModifyUserRequest": {
             "type": "object",
-            "required": [
-                "password",
-                "username"
-            ],
             "properties": {
+                "email": {
+                    "type": "string"
+                },
                 "password": {
                     "description": "密码",
-                    "type": "string",
-                    "maxLength": 20,
-                    "minLength": 8
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "rePassword": {
+                    "type": "string"
                 },
                 "username": {
                     "description": "用户名",
-                    "type": "string",
-                    "maxLength": 32
+                    "type": "string"
                 }
             }
         },

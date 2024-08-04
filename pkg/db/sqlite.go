@@ -59,6 +59,16 @@ func (s *SQLiteDatabase) Query(model interface{}, conditions map[string]interfac
 	return query, query.Error
 }
 
+func (s *SQLiteDatabase) QueryEx(model interface{}, conditions interface{}) (*gorm.DB, error) {
+	conditionMap, err := StructToConditions(conditions)
+	if err != nil {
+		return nil, err
+	}
+
+	query := s.DB.Where(conditionMap).Find(model)
+	return query, query.Error
+}
+
 func (s *SQLiteDatabase) Insert(model interface{}) error {
 	return s.DB.Create(model).Error
 }

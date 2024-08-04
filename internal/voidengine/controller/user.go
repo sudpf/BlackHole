@@ -4,9 +4,12 @@ import (
 	"BlackHole/internal/voidengine/message"
 	"BlackHole/internal/voidengine/model"
 	"BlackHole/internal/voidengine/response"
+	"BlackHole/pkg/common"
 	"BlackHole/pkg/env"
+	"sync"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm/schema"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -35,9 +38,32 @@ func (u *User) ListUser(c *gin.Context, e *env.Env) *response.ApiResponse {
 	}
 	log.Info(request)
 
-	var users []model.User
+	// 解析结构体
+	reflectUser := &model.User{}
+	dbSchema, err := schema.Parse(reflectUser, &sync.Map{}, schema.NamingStrategy{})
+	if err != nil {
+		return response.SytemError
+	}
 
-	if _, err := model.ControlPlanDB().Query(&users, map[string]interface{}{}); err != nil {
+	reflectName := &reflectUser.Name
+	field, ok := dbSchema.FieldsByName[common.FieldName(reflectUser, reflectName)]
+	if !ok {
+		return response.SytemError
+	}
+
+	conditions := make(map[string]interface{})
+	if request.Username != nil {
+		conditions[field.DBName] = request.Username
+	}
+	conditions["PageNo"] = request.ListQueryBase.PageNo
+	conditions["PageSize"] = request.ListQueryBase.PageSize
+	if len(request.ListQueryBase.OrderBy) > 0 {
+		conditions["OrderBy"] = request.ListQueryBase.OrderBy
+	}
+
+	var users []model.User
+	if _, err := model.ControlPlanDB().Query(&users, conditions); err != nil {
+		log.Errorf("query db err:", err)
 		return response.SytemError
 	}
 
@@ -64,6 +90,8 @@ func (u *User) AddUser(c *gin.Context, e *env.Env) *response.ApiResponse {
 	user := &model.User{
 		Name:     request.Username,
 		Password: request.Password,
+		Email:    request.Email,
+		Phone:    request.Phone,
 	}
 
 	if err := model.ControlPlanDB().Insert(user); err != nil {
@@ -89,9 +117,42 @@ func (u *User) ModifyUser(c *gin.Context, e *env.Env) *response.ApiResponse {
 	}
 	log.Info(request)
 
-	user := &model.User{}
+	var users []model.User
+	if _, err := model.ControlPlanDB().QueryEx(&users, &model.User{Name: request.Username}); err != nil {
+		return response.SytemError
+	}
+	if len(users) == 0 {
+		return response.UserNotExist
+	}
 
-	if err := model.ControlPlanDB().Update(user, nil); err != nil {
+	modifyUser := users[0]
+	if request.Password != nil {
+		modifyUser.Password = *request.Password
+	}
+	if request.Email != nil {
+		modifyUser.Email = *request.Email
+	}
+	if request.Phone != nil {
+		modifyUser.Phone = *request.Phone
+	}
+
+	// 解析结构体
+	reflectUser := &model.User{}
+	dbSchema, err := schema.Parse(reflectUser, &sync.Map{}, schema.NamingStrategy{})
+	if err != nil {
+		return response.SytemError
+	}
+
+	reflectName := &reflectUser.Name
+	field, ok := dbSchema.FieldsByName[common.FieldName(reflectUser, reflectName)]
+	if !ok {
+		return response.SytemError
+	}
+
+	conditions := make(map[string]interface{})
+	conditions[field.DBName] = request.Username
+
+	if err := model.ControlPlanDB().Update(&modifyUser, conditions); err != nil {
 		return response.SytemError
 	}
 	return response.ApiSuccess
@@ -114,9 +175,23 @@ func (u *User) DeleteUser(c *gin.Context, e *env.Env) *response.ApiResponse {
 	}
 	log.Info(request)
 
-	user := &model.User{}
+	// 解析结构体
+	reflectUser := &model.User{}
+	dbSchema, err := schema.Parse(reflectUser, &sync.Map{}, schema.NamingStrategy{})
+	if err != nil {
+		return response.SytemError
+	}
 
-	if err := model.ControlPlanDB().Delete(user, nil); err != nil {
+	reflectName := &reflectUser.Name
+	field, ok := dbSchema.FieldsByName[common.FieldName(reflectUser, reflectName)]
+	if !ok {
+		return response.SytemError
+	}
+
+	conditions := make(map[string]interface{})
+	conditions[field.DBName] = request.Username
+
+	if err := model.ControlPlanDB().Delete(&model.User{}, conditions); err != nil {
 		return response.SytemError
 	}
 	return response.ApiSuccess

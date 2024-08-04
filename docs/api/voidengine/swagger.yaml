@@ -4,42 +4,39 @@ consumes:
 definitions:
   message.AddUserRequest:
     properties:
+      email:
+        type: string
       password:
         description: 密码
-        maxLength: 20
-        minLength: 8
+        type: string
+      phone:
+        type: string
+      rePassword:
         type: string
       username:
         description: 用户名
-        maxLength: 32
         type: string
-    required:
-    - password
-    - username
     type: object
   message.DeleteUserRequest:
     properties:
       username:
         description: 用户名
-        maxLength: 32
         type: string
-    required:
-    - username
     type: object
   message.ModifyUserRequest:
     properties:
+      email:
+        type: string
       password:
         description: 密码
-        maxLength: 20
-        minLength: 8
+        type: string
+      phone:
+        type: string
+      rePassword:
         type: string
       username:
         description: 用户名
-        maxLength: 32
         type: string
-    required:
-    - password
-    - username
     type: object
   response.ApiResponse:
     properties:
@@ -135,6 +132,10 @@ paths:
         minimum: 1
         name: pageSize
         type: integer
+      - description: 用户名
+        in: query
+        name: username
+        type: string
       produces:
       - application/json
       responses:

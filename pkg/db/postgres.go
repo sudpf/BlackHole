@@ -67,6 +67,16 @@ func (p *PostgreSQLDatabase) Query(model interface{}, conditions map[string]inte
 	return query, query.Error
 }
 
+func (p *PostgreSQLDatabase) QueryEx(model interface{}, conditions interface{}) (*gorm.DB, error) {
+	conditionMap, err := StructToConditions(conditions)
+	if err != nil {
+		return nil, err
+	}
+
+	query := p.DB.Where(conditionMap).Find(model)
+	return query, query.Error
+}
+
 func (p *PostgreSQLDatabase) Insert(model interface{}) error {
 	return p.DB.Create(model).Error
 }

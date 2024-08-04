@@ -80,6 +80,33 @@ func (m *MySQLDatabase) CreateDatabase() error {
 }
 
 func (m *MySQLDatabase) Query(model interface{}, conditions map[string]interface{}) (*gorm.DB, error) {
+	pageNo, okPageNo := conditions["PageNo"].(int)
+	pageSize, okPageSize := conditions["PageSize"].(int)
+	order, okOrder := conditions["OrderBy"].(string)
+
+	delete(conditions, "PageNo")
+	delete(conditions, "PageSize")
+	delete(conditions, "OrderBy")
+
+	db := m.DB.Where(conditions)
+	if okPageNo && okPageSize {
+		db = db.Offset((pageNo - 1) * pageSize).Limit(pageSize)
+	}
+
+	if okOrder {
+		if order == "desc" {
+			db = db.Order("id DESC")
+		} else {
+			db = db.Order("id ASC")
+		}
+	}
+
+	db = db.Find(model)
+
+	return db, db.Error
+}
+
+func (m *MySQLDatabase) QueryEx(model interface{}, conditions interface{}) (*gorm.DB, error) {
 	query := m.DB.Where(conditions).Find(model)
 	return query, query.Error
 }
