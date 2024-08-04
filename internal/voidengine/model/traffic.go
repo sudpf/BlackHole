@@ -5,15 +5,15 @@ import (
 )
 
 type NetworkTraffic struct {
-	ID              uint      `gorm:"primaryKey;autoIncrement"` // 唯一标识符
-	Timestamp       time.Time `gorm:"not null"`                 // 记录时间
-	SourceIP        string    `gorm:"size:45;not null"`         // 源IP地址（支持IPv4和IPv6）
-	DestinationIP   string    `gorm:"size:45;not null"`         // 目的IP地址（支持IPv4和IPv6）
-	SourcePort      int       `gorm:"not null"`                 // 源端口
-	DestinationPort int       `gorm:"not null"`                 // 目的端口
-	Protocol        string    `gorm:"size:10;not null"`         // 协议（如 TCP, UDP）
-	BytesIn         int64     `gorm:"not null"`                 // 传入的字节数
-	BytesOut        int64     `gorm:"not null"`                 // 传出的字节数
-	PacketCount     int       `gorm:"not null"`                 // 包的数量
-	Description     string    `gorm:"size:500"`                 // 其他描述信息
+	ID              int64     `gorm:"primaryKey"`
+	Timestamp       time.Time `gorm:"not null"`
+	SourceIP        string    `gorm:"type:varchar;not null"`
+	DestinationIP   string    `gorm:"type:varchar;not null"`
+	SourcePort      int       `gorm:"not null"`
+	DestinationPort int       `gorm:"not null"`
+	Protocol        string    `gorm:"type:varchar;not null"`
+	BytesIn         int64     `gorm:"not null"`
+	BytesOut        int64     `gorm:"not null"`
+	PacketCount     int       `gorm:"not null"`
+	Description     string    `gorm:"type:varchar"`
 }
