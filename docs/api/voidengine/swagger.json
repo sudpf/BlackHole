@@ -45,6 +45,68 @@
                 }
             }
         },
+        "/v1/traffic": {
+            "get": {
+                "description": "List NetworkTraffics",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "NetworkTraffic"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "zh",
+                        "description": "Language",
+                        "name": "Accept-Language",
+                        "in": "header"
+                    },
+                    {
+                        "maxLength": 4,
+                        "type": "string",
+                        "example": "desc",
+                        "description": "排序方式[desc, asc]",
+                        "name": "orderBy",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "example": 1,
+                        "description": "当前页码",
+                        "name": "pageNo",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "example": 20,
+                        "description": "每页数量",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.ApiResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ApiResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/user": {
             "get": {
                 "description": "List Users",

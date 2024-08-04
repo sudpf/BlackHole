@@ -27,7 +27,8 @@ func InitDB(databaseConfig config.DatabaseConfig) error {
 		if err != nil {
 			panic(err)
 		}
-		ckDB.CreateTable(&User{})
+		ckDB.CreateTable(&NetworkTraffic{})
+
 		dpDB = ckDB
 	}
 

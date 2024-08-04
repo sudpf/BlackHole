@@ -89,8 +89,31 @@ func (c *ClickHouseDatabase) CreateDatabase() error {
 }
 
 func (c *ClickHouseDatabase) Query(model interface{}, conditions map[string]interface{}) (*gorm.DB, error) {
-	query := c.DB.Where(conditions).Find(model)
-	return query, query.Error
+	pageNo, okPageNo := conditions["PageNo"].(int)
+	pageSize, okPageSize := conditions["PageSize"].(int)
+	order, okOrder := conditions["OrderBy"].(string)
+
+	delete(conditions, "PageNo")
+	delete(conditions, "PageSize")
+	delete(conditions, "OrderBy")
+
+	db := c.DB.Where(conditions)
+	if okPageNo && okPageSize {
+		db = db.Offset((pageNo - 1) * pageSize).Limit(pageSize)
+		//fmt.Printf("%d %d", pageNo, pageSize)
+	}
+
+	if okOrder {
+		if order == "desc" {
+			db = db.Order("timestamp DESC")
+		} else {
+			db = db.Order("timestamp ASC")
+		}
+	}
+
+	db = db.Find(model)
+
+	return db, db.Error
 }
 
 func (c *ClickHouseDatabase) QueryEx(model interface{}, conditions interface{}) (*gorm.DB, error) {

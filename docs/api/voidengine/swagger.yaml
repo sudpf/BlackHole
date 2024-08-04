@@ -73,6 +73,49 @@ paths:
             $ref: '#/definitions/response.ApiResponse'
       tags:
       - ping
+  /v1/traffic:
+    get:
+      consumes:
+      - application/json
+      description: List NetworkTraffics
+      parameters:
+      - default: zh
+        description: Language
+        in: header
+        name: Accept-Language
+        type: string
+      - description: 排序方式[desc, asc]
+        example: desc
+        in: query
+        maxLength: 4
+        name: orderBy
+        type: string
+      - description: 当前页码
+        example: 1
+        in: query
+        minimum: 1
+        name: pageNo
+        type: integer
+      - description: 每页数量
+        example: 20
+        in: query
+        maximum: 100
+        minimum: 1
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ApiResponse'
+      tags:
+      - NetworkTraffic
   /v1/user:
     delete:
       consumes:
