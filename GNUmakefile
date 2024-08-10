@@ -31,8 +31,18 @@ default: build
 build: all
 
 fmt:
-	@gofmt -w $(GOFMT_FILES)
-	@goimports -w $(GOFMT_FILES)
+	@if command -v gofmt >/dev/null 2>&1; then \
+		echo "Running gofmt..."; \
+		gofmt -w $(GOFMT_FILES); \
+	else \
+		echo "gofmt not found, skipping..."; \
+	fi
+	@if command -v goimports >/dev/null 2>&1; then \
+		echo "Running goimports..."; \
+		goimports -w $(GOFMT_FILES); \
+	else \
+		echo "goimports not found, skipping..."; \
+	fi
 
 init:
 	go mod init BlackHole
