@@ -23,7 +23,7 @@
     "host": "这里写接口服务的host",
     "basePath": "这里写base path",
     "paths": {
-        "/v1/ping": {
+        "/ping": {
             "get": {
                 "description": "Ping",
                 "consumes": [

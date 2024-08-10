@@ -22,7 +22,7 @@ func NewPing() *Ping {
 // @Accept json
 // @Produce json
 // @Success 200 {object} response.ApiResponse
-// @Router /v1/ping [get]
+// @Router /ping [get]
 func (p *Ping) PingGet(c *gin.Context, e *env.Env) *response.ApiResponse {
 	log.WithFields(logrus.Fields{"clientip": e.ClientIp}).Error("Get ping")
 	return response.ApiSuccess.WithData("Get ping")

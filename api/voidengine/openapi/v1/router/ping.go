@@ -8,7 +8,7 @@ import (
 )
 
 func init() {
-	openapi.RegisteRoutes("v1", []router.Route{
+	openapi.RegisteRoutes("", []router.Route{
 		// GET
 		router.NewGetRoute("/ping", wrapper.WrapperEnvFunc(handler.PingGet)),
 		// POST

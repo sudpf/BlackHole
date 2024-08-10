@@ -59,7 +59,7 @@ info:
   termsOfService: http://swagger.io/terms/
   title: '"API 文档"'
 paths:
-  /v1/ping:
+  /ping:
     get:
       consumes:
       - application/json
