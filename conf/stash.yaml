@@ -1,0 +1,65 @@
+App:
+  ListenHttp: 127.0.0.1:8002
+  ListenHttps: 127.0.0.1:8003
+
+Log:
+  Level: info
+  Size: 256m
+  Dir: logs
+
+Clusters:
+- Input:
+    Syslogs:
+    - Protocol: Unixgram
+      Address: /tmp/suricata_unix_sock
+      Processors: 2
+  Filters:
+  - Action: drop
+    Conditions:
+      - Key: k8s_container_name
+        Value: "-rpc"
+        Type: contains
+      - Key: level
+        Value: info
+        Type: match
+        Op: and
+  - Action: remove_field
+    Fields:
+      - message
+      - _source
+      - _type
+      - _score
+      - _id
+      - "@version"
+      - topic
+      - index
+      - beat
+      - docker_container
+      - offset
+      - prospector
+      - source
+      - stream
+  - Action: transfer
+    Field: content
+  Output:
+    Clickhouse:
+      Addr:
+      - 192.168.3.143:9000
+      Auth:
+        Database: voidengine
+        Username: default
+        Password: "123456"
+      Table: network_traffics
+      Columns:
+      - timestamp
+      - source_ip
+      - destination_ip
+      - source_port
+      - destination_port
+      - protocol
+      - bytes_in
+      - bytes_out
+      - packet_count
+      - description
+      Interval: 1
+      MaxChunkBytes: 157286400
