@@ -18,10 +18,10 @@ type VoidEngineConfig struct {
 
 var (
 	GlobalVoidEngineConfig VoidEngineConfig
-	appName                string
-	appBaseDir             string
-	appLogFile             string
-	apiLogFile             string
+	appVoidEngineName      string
+	appVoidEngineBaseDir   string
+	appVoidEngineLogFile   string
+	apiVoidEngineLogFile   string
 )
 
 func (c *VoidEngineConfig) String() string {
@@ -34,11 +34,11 @@ func (c *VoidEngineConfig) String() string {
 }
 
 func (c *VoidEngineConfig) AppLogFile() string {
-	return appLogFile
+	return appVoidEngineLogFile
 }
 
 func (c *VoidEngineConfig) ApiLogFile() string {
-	return apiLogFile
+	return apiVoidEngineLogFile
 }
 
 func (c *VoidEngineConfig) LogLevel() string {
@@ -59,7 +59,7 @@ func ParseVoidEngineConfig(file string) error {
 	if err != nil {
 		log.Fatalf("Failed to get executable path: %v", err)
 	}
-	appName := filepath.Base(appPath)
+	appVoidEngineName := filepath.Base(appPath)
 
 	// 获取绝对路径
 	absPath, err := filepath.Abs(appPath)
@@ -68,10 +68,10 @@ func ParseVoidEngineConfig(file string) error {
 	}
 
 	// 获取目录路径
-	appBaseDir := filepath.Dir(absPath)
+	appVoidEngineBaseDir := filepath.Dir(absPath)
 
 	if !filepath.IsAbs(file) {
-		file = appBaseDir + "/../conf/" + file
+		file = appVoidEngineBaseDir + "/../conf/" + file
 	}
 
 	if _, err := toml.DecodeFile(file, &GlobalVoidEngineConfig); err != nil {
@@ -79,11 +79,11 @@ func ParseVoidEngineConfig(file string) error {
 	}
 
 	if !filepath.IsAbs(GlobalVoidEngineConfig.Log.Dir) {
-		GlobalVoidEngineConfig.Log.Dir = appBaseDir + "/../" + GlobalVoidEngineConfig.Log.Dir
+		GlobalVoidEngineConfig.Log.Dir = appVoidEngineBaseDir + "/../" + GlobalVoidEngineConfig.Log.Dir
 	}
 
-	appLogFile = GlobalVoidEngineConfig.Log.Dir + "/" + appName + ".log"
-	apiLogFile = GlobalVoidEngineConfig.Log.Dir + "/" + "api.log"
+	appVoidEngineLogFile = GlobalVoidEngineConfig.Log.Dir + "/" + appVoidEngineName + ".log"
+	apiVoidEngineLogFile = GlobalVoidEngineConfig.Log.Dir + "/" + "api.log"
 
 	return nil
 }

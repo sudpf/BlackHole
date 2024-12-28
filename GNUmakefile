@@ -68,6 +68,9 @@ clean:
 	rm -rf bin/*
 	go clean -modcache
 
+tools:
+	GOOS=${GOOS} GOARCH=${GOARCH} go build ${GFLAGS} -o bin/tools cmd/tools/main.go
+
 swagger-generator: fmt vendor
 	GOOS=${GOOS} GOARCH=${GOARCH} go build ${GFLAGS} -o bin/swagger-generator cmd/swagger-generator/main.go
 	./bin/swagger-generator -source=./internal/voidengine/voidengine.go -output=./docs/api/voidengine

@@ -1,14 +1,15 @@
 package config
 
 type appConfig struct {
-	ListenHttp  string `toml:"listen_http"`
-	ListenHttps string `toml:"listen_https"`
+	ListenHttp  string `toml:"listen_http" yaml:"Listenhttp" json:",default=127.0.0.1:80"`
+	ListenHttps string `toml:"listen_https" yaml:"ListenHttps" json:","`
 }
 
 type logConfig struct {
-	Level string `toml:"level"`
-	Size  string `toml:"size"`
-	Dir   string `toml:"dir"`
+	Level string `toml:"level" yaml:"Level" json:",default=info"`
+	Size  string `toml:"size" yaml:"Size" json:",default=256m"`
+	Dir   string `toml:"dir" yaml:"Dir" json:",default=logs"`
+	Gin   string `toml:"gin" yaml:"Gin" json:",optional"`
 }
 
 type MySQLConfig struct {
