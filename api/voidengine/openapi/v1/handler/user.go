@@ -1,52 +1,139 @@
 package handler
 
 import (
-	"BlackHole/internal/voidengine/controller"
+	"BlackHole/api/common/response"
+	"BlackHole/api/voidengine/openapi/v1/message"
+	"BlackHole/internal/voidengine/service"
 	"BlackHole/pkg/env"
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 )
 
+// ListUser
+// @Description List Users
+// @Tags User
+// @Accept json
+// @Produce json
+// @Param Accept-Language header string false "Language" default(zh)
+// @param user query message.ListUserRequest true "list user param"
+// @Success 200 {object} response.ApiResponse
+// @Failure 400 {object} response.ApiResponse
+// @Router /v1/user [get]
 func ListUser(c *gin.Context, e *env.Env) {
-	user := controller.NewUser()
-	res := user.ListUser(c, e)
-	if res.Code != 0 {
-		c.JSON(http.StatusBadRequest, res)
+	var request message.ListUserRequest
+	if err := c.ShouldBindQuery(&request); err != nil {
+		c.JSON(http.StatusBadRequest, response.InvalidParams.Tr(e).WithData(e.TranslatErrors(err)))
 		return
 	}
-	c.JSON(http.StatusOK, res)
+
+	users, err := service.NewUserService().List(service.UserListOptions{
+		PageNo:   request.PageNo,
+		PageSize: request.PageSize,
+		OrderBy:  request.OrderBy,
+		Username: request.Username,
+	})
+	if err != nil {
+		respondUserServiceError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, response.ApiSuccess.WithData(users))
 }
 
-func AddUer(c *gin.Context, e *env.Env) {
-	user := controller.NewUser()
-	res := user.AddUser(c, e)
-	if res.Code != 0 {
-		c.JSON(http.StatusBadRequest, res)
+// AddUser
+// @Description Add a User
+// @Tags User
+// @Accept json
+// @Produce json
+// @Param Accept-Language header string false "Language" default(zh)
+// @param user body message.AddUserRequest true "add user param"
+// @Success 200 {object} response.ApiResponse
+// @Failure 400 {object} response.ApiResponse
+// @Router /v1/user [post]
+func AddUser(c *gin.Context, e *env.Env) {
+	var request message.AddUserRequest
+	if err := c.ShouldBind(&request); err != nil {
+		c.JSON(http.StatusBadRequest, response.InvalidParams.Tr(e).WithData(e.TranslatErrors(err)))
 		return
 	}
 
-	c.JSON(http.StatusOK, res)
+	if err := service.NewUserService().Add(service.AddUserInput{
+		Username: request.Username,
+		Password: request.Password,
+		Email:    request.Email,
+		Phone:    request.Phone,
+	}); err != nil {
+		respondUserServiceError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, response.ApiSuccess)
 }
 
-func ModifyUer(c *gin.Context, e *env.Env) {
-	user := controller.NewUser()
-	res := user.ModifyUser(c, e)
-	if res.Code != 0 {
-		c.JSON(http.StatusBadRequest, res)
+// ModifyUser
+// @Description Modify a User
+// @Tags User
+// @Accept json
+// @Produce json
+// @Param Accept-Language header string false "Language" default(zh)
+// @param user body message.ModifyUserRequest true "modify user param"
+// @Success 200 {object} response.ApiResponse
+// @Failure 400 {object} response.ApiResponse
+// @Router /v1/user [put]
+func ModifyUser(c *gin.Context, e *env.Env) {
+	var request message.ModifyUserRequest
+	if err := c.ShouldBind(&request); err != nil {
+		c.JSON(http.StatusBadRequest, response.InvalidParams.Tr(e).WithData(e.TranslatErrors(err)))
 		return
 	}
 
-	c.JSON(http.StatusOK, res)
+	if err := service.NewUserService().Modify(service.ModifyUserInput{
+		Username: request.Username,
+		Password: request.Password,
+		Email:    request.Email,
+		Phone:    request.Phone,
+	}); err != nil {
+		respondUserServiceError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, response.ApiSuccess)
 }
 
-func DeleteUer(c *gin.Context, e *env.Env) {
-	user := controller.NewUser()
-	res := user.DeleteUser(c, e)
-	if res.Code != 0 {
-		c.JSON(http.StatusBadRequest, res)
+// DeleteUser
+// @Description Delete a User
+// @Tags User
+// @Accept json
+// @Produce json
+// @Param Accept-Language header string false "Language" default(zh)
+// @param user body message.DeleteUserRequest true "delete user param"
+// @Success 200 {object} response.ApiResponse
+// @Failure 400 {object} response.ApiResponse
+// @Router /v1/user [delete]
+func DeleteUser(c *gin.Context, e *env.Env) {
+	var request message.DeleteUserRequest
+	if err := c.ShouldBind(&request); err != nil {
+		c.JSON(http.StatusBadRequest, response.InvalidParams.Tr(e).WithData(e.TranslatErrors(err)))
 		return
 	}
 
-	c.JSON(http.StatusOK, res)
+	if err := service.NewUserService().Delete(request.Username); err != nil {
+		respondUserServiceError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, response.ApiSuccess)
+}
+
+func respondUserServiceError(c *gin.Context, err error) {
+	if errors.Is(err, service.ErrUserNotFound) {
+		c.JSON(http.StatusBadRequest, response.UserNotExist)
+		return
+	}
+
+	log.WithError(err).Error("Handle user request")
+	c.JSON(http.StatusInternalServerError, response.SytemError)
 }

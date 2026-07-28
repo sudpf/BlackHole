@@ -10,8 +10,8 @@ import (
 func registerUserRoutes() {
 	openapi.RegisterRoutes("v1", []router.Route{
 		router.NewGetRoute("/user", wrapper.WrapperEnvFunc(handler.ListUser)),
-		router.NewPostRoute("/user", wrapper.WrapperEnvFunc(handler.AddUer)),
-		router.NewPutRoute("/user", wrapper.WrapperEnvFunc(handler.ModifyUer)),
-		router.NewDeleteRoute("/user", wrapper.WrapperEnvFunc(handler.DeleteUer)),
+		router.NewPostRoute("/user", wrapper.WrapperEnvFunc(handler.AddUser)),
+		router.NewPutRoute("/user", wrapper.WrapperEnvFunc(handler.ModifyUser)),
+		router.NewDeleteRoute("/user", wrapper.WrapperEnvFunc(handler.DeleteUser)),
 	})
 }

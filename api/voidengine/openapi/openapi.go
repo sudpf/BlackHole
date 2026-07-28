@@ -1,12 +1,12 @@
 package openapi
 
 import (
+	"BlackHole/api/common/response"
 	"BlackHole/api/middleware"
 	"BlackHole/api/router"
 	"BlackHole/api/swagger"
 	"BlackHole/docs/api/voidengine"
 	"BlackHole/internal/voidengine/locales"
-	"BlackHole/internal/voidengine/response"
 	"BlackHole/pkg/env"
 	"net"
 	"net/http"

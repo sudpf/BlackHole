@@ -5,38 +5,65 @@ definitions:
   message.AddUserRequest:
     properties:
       email:
+        maxLength: 100
+        minLength: 5
         type: string
       password:
         description: 密码
+        maxLength: 20
+        minLength: 8
         type: string
       phone:
+        maxLength: 20
+        minLength: 4
         type: string
       rePassword:
+        maxLength: 20
+        minLength: 8
         type: string
       username:
         description: 用户名
+        maxLength: 32
         type: string
+    required:
+    - password
+    - rePassword
+    - username
     type: object
   message.DeleteUserRequest:
     properties:
       username:
         description: 用户名
+        maxLength: 32
         type: string
+    required:
+    - username
     type: object
   message.ModifyUserRequest:
     properties:
       email:
+        maxLength: 100
+        minLength: 5
         type: string
       password:
         description: 密码
+        maxLength: 20
+        minLength: 8
         type: string
       phone:
+        maxLength: 20
+        minLength: 4
         type: string
       rePassword:
+        maxLength: 20
+        minLength: 8
         type: string
       username:
         description: 用户名
+        maxLength: 32
         type: string
+    required:
+    - username
     type: object
   response.ApiResponse:
     properties:
@@ -190,6 +217,7 @@ paths:
         type: integer
       - description: 用户名
         in: query
+        maxLength: 32
         name: username
         type: string
       produces:

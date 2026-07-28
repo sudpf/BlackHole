@@ -173,6 +173,7 @@
                         "in": "query"
                     },
                     {
+                        "maxLength": 32,
                         "type": "string",
                         "description": "用户名",
                         "name": "username",
@@ -331,54 +332,84 @@
     "definitions": {
         "message.AddUserRequest": {
             "type": "object",
+            "required": [
+                "password",
+                "rePassword",
+                "username"
+            ],
             "properties": {
                 "email": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 5
                 },
                 "password": {
                     "description": "密码",
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 20,
+                    "minLength": 8
                 },
                 "phone": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 20,
+                    "minLength": 4
                 },
                 "rePassword": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 20,
+                    "minLength": 8
                 },
                 "username": {
                     "description": "用户名",
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 32
                 }
             }
         },
         "message.DeleteUserRequest": {
             "type": "object",
+            "required": [
+                "username"
+            ],
             "properties": {
                 "username": {
                     "description": "用户名",
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 32
                 }
             }
         },
         "message.ModifyUserRequest": {
             "type": "object",
+            "required": [
+                "username"
+            ],
             "properties": {
                 "email": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 5
                 },
                 "password": {
                     "description": "密码",
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 20,
+                    "minLength": 8
                 },
                 "phone": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 20,
+                    "minLength": 4
                 },
                 "rePassword": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 20,
+                    "minLength": 8
                 },
                 "username": {
                     "description": "用户名",
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 32
                 }
             }
         },

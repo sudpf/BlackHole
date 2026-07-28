@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"BlackHole/internal/voidengine/response"
+	"BlackHole/api/common/response"
 	"BlackHole/pkg/env"
 	"net/http"
 
