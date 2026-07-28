@@ -88,6 +88,6 @@ func swaggerHost(address string) string {
 	return net.JoinHostPort(host, port)
 }
 
-func RegisteRoutes(group string, routes []router.Route) {
+func RegisterRoutes(group string, routes []router.Route) {
 	apiRoutes[group] = append(apiRoutes[group], routes...)
 }

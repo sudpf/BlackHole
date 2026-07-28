@@ -7,8 +7,8 @@ import (
 	"BlackHole/api/wrapper"
 )
 
-func init() {
-	openapi.RegisteRoutes("", []router.Route{
+func registerPingRoutes() {
+	openapi.RegisterRoutes("", []router.Route{
 		// GET
 		router.NewGetRoute("/ping", wrapper.WrapperEnvFunc(handler.PingGet)),
 		// POST

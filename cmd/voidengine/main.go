@@ -2,7 +2,7 @@ package main
 
 import (
 	"BlackHole/api/voidengine/openapi"
-	_ "BlackHole/api/voidengine/openapi/v1/router"
+	v1router "BlackHole/api/voidengine/openapi/v1/router"
 	"BlackHole/internal/voidengine/model"
 	"BlackHole/pkg/config"
 	"BlackHole/pkg/logger"
@@ -29,6 +29,7 @@ func main() {
 	log.Info(cfg.String())
 
 	listenAddress := cfg.ListenHTTP()
+	v1router.RegisterRoutes()
 	openapi.InitApi(listenAddress)
 	model.InitDB(cfg.Database)
 	if err := openapi.Run(listenAddress); err != nil {
