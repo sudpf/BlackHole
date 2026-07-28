@@ -1,31 +1,34 @@
 package handler
 
 import (
-	"BlackHole/internal/voidengine/controller"
+	"BlackHole/internal/voidengine/response"
 	"BlackHole/pkg/env"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 )
 
+// PingGet
+// @Description Ping
+// @Tags ping
+// @Accept json
+// @Produce json
+// @Success 200 {object} response.ApiResponse
+// @Router /ping [get]
 func PingGet(c *gin.Context, e *env.Env) {
-	ping := controller.NewPing()
-	res := ping.PingGet(c, e)
-	if res.Code != 0 {
-		c.JSON(http.StatusBadRequest, res)
-		return
-	}
-
-	c.JSON(http.StatusOK, res)
+	log.WithField("clientip", e.ClientIp).Info("Get ping")
+	c.JSON(http.StatusOK, response.ApiSuccess.WithData("Get ping"))
 }
 
+// PingPost
+// @Description Ping
+// @Tags ping
+// @Accept json
+// @Produce json
+// @Success 200 {object} response.ApiResponse
+// @Router /ping [post]
 func PingPost(c *gin.Context, e *env.Env) {
-	ping := controller.NewPing()
-	res := ping.PingPost(c, e)
-	if res.Code != 0 {
-		c.JSON(http.StatusBadRequest, res)
-		return
-	}
-
-	c.JSON(http.StatusOK, res)
+	log.WithField("clientip", e.ClientIp).Info("Post ping")
+	c.JSON(http.StatusOK, response.ApiSuccess.WithData("Post ping"))
 }

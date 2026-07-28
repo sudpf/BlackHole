@@ -10,21 +10,23 @@ import (
 )
 
 func main() {
-	var sourceDir string
+	var sourceFile string
+	var searchDirs string
 	var outputDir string
 
 	// Parse command-line arguments
-	flag.StringVar(&sourceDir, "source", "", "Directory of the source files to parse")
+	flag.StringVar(&sourceFile, "source", "", "Main API source file")
+	flag.StringVar(&searchDirs, "search", "", "Comma-separated directories to scan")
 	flag.StringVar(&outputDir, "output", "docs", "Directory to save the generated Swagger documentation")
 	flag.Parse()
 
-	if sourceDir == "" {
-		fmt.Println("Source directory is required")
+	if sourceFile == "" {
+		fmt.Println("Source file is required")
 		os.Exit(1)
 	}
 
 	// Call the function to generate Swagger documentation
-	err := generateSwagger(sourceDir, outputDir)
+	err := generateSwagger(sourceFile, searchDirs, outputDir)
 	if err != nil {
 		fmt.Printf("Error generating Swagger documentation: %v\n", err)
 		os.Exit(1)
@@ -34,9 +36,12 @@ func main() {
 }
 
 // generateSwagger generates Swagger documentation using swag's internal API
-func generateSwagger(sourceFile, outputDir string) error {
+func generateSwagger(sourceFile, searchDirs, outputDir string) error {
 	dir := filepath.Dir(sourceFile)
 	file := filepath.Base(sourceFile)
+	if searchDirs == "" {
+		searchDirs = dir
+	}
 
 	// Create a new generator instance
 	generator := gen.New()
@@ -44,7 +49,7 @@ func generateSwagger(sourceFile, outputDir string) error {
 	// Set up configuration
 	conf := &gen.Config{
 		// 遍历需要查询注释的目录
-		SearchDir: dir,
+		SearchDir: searchDirs,
 		// 不包含哪些文件
 		Excludes: "",
 		// 输出目录

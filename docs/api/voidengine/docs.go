@@ -51,6 +51,26 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "post": {
+                "description": "Ping",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ping"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.ApiResponse"
+                        }
+                    }
+                }
             }
         },
         "/v1/traffic": {
