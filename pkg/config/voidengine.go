@@ -49,6 +49,10 @@ func (c *VoidEngineConfig) LogDir() string {
 	return c.Log.Dir
 }
 
+func (c *VoidEngineConfig) ListenHTTP() string {
+	return c.App.ListenHttp
+}
+
 func GetVoidEngineConfig() *VoidEngineConfig {
 	return &GlobalVoidEngineConfig
 }

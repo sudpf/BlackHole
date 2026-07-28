@@ -63,7 +63,7 @@ func (u *User) ListUser(c *gin.Context, e *env.Env) *response.ApiResponse {
 
 	var users []model.User
 	if _, err := model.ControlPlanDB().Query(&users, conditions); err != nil {
-		log.Errorf("query db err:", err)
+		log.Errorf("query db err: %v", err)
 		return response.SytemError
 	}
 

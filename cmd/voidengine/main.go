@@ -20,13 +20,18 @@ func main() {
 		log.WithFields(log.Fields{
 			"error": err,
 		}).Error("Parse config file error")
+		return
 	}
 
-	logger.InitLog(config.GetVoidEngineConfig().LogLevel(), config.GetVoidEngineConfig().AppLogFile())
+	cfg := config.GetVoidEngineConfig()
+	logger.InitLog(cfg.LogLevel(), cfg.AppLogFile())
 
-	log.Info(config.GetVoidEngineConfig().String())
+	log.Info(cfg.String())
 
-	openapi.InitApi()
-	model.InitDB(config.GetVoidEngineConfig().Database)
-	openapi.Run()
+	listenAddress := cfg.ListenHTTP()
+	openapi.InitApi(listenAddress)
+	model.InitDB(cfg.Database)
+	if err := openapi.Run(listenAddress); err != nil {
+		log.WithError(err).Fatal("Run OpenAPI error")
+	}
 }

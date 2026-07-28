@@ -81,12 +81,12 @@ func (s SyslogService) Start() {
 			for logParts := range s.channel {
 				logMap, err := jsoniter.MarshalToString(logParts)
 				if err != nil {
-					log.Warn("Marshal error:%v parts[%v]", err, logParts)
+					log.Warnf("Marshal error:%v parts[%v]", err, logParts)
 					continue
 				}
 
 				if err := s.handler.Consume(ctx, strconv.FormatUint(1, 10), logMap); err != nil {
-					log.Warn("Consume log err:%v", err)
+					log.Warnf("Consume log err:%v", err)
 				}
 			}
 			log.Infof("Routine Run Over")

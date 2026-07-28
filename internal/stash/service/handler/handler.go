@@ -40,7 +40,7 @@ func (mh *MessageHandler) Consume(_ context.Context, _, val string) error {
 
 	for _, mWriter := range mh.writers {
 		if err := mWriter.Write(m); err != nil {
-			log.Warn("write log error:%v", err)
+			log.Warnf("write log error:%v", err)
 		}
 	}
 

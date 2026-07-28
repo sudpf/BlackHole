@@ -126,7 +126,7 @@ func (m *MySQLDatabase) Delete(model interface{}, conditions map[string]interfac
 func NewMySQLDatabase(connectionString string, debug bool, logFile string) (*MySQLDatabase, error) {
 	db := &MySQLDatabase{debug: debug, logFile: logFile, link: connectionString}
 	if err := db.CreateDatabase(); err != nil {
-		log.Errorf("create database error:", err)
+		log.Errorf("create database error: %v", err)
 		return nil, err
 	}
 

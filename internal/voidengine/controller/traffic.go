@@ -61,7 +61,7 @@ func (u *NetworkTraffic) ListNetworkTraffic(c *gin.Context, e *env.Env) *respons
 
 	var traffics []model.NetworkTraffic
 	if _, err := model.DataPlanDB().Query(&traffics, conditions); err != nil {
-		log.Errorf("query db err:", err)
+		log.Errorf("query db err: %v", err)
 		return response.SytemError
 	}
 

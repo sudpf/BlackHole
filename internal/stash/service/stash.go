@@ -26,7 +26,7 @@ func Init() {
 
 		writers, err := output.NewWriters(cluster.Output)
 		if err != nil {
-			log.Warn("NewWriters err: %v", err)
+			log.Warnf("NewWriters err: %v", err)
 		}
 
 		handle := handler.NewHandler()

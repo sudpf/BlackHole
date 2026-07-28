@@ -8,6 +8,7 @@ import (
 	"BlackHole/internal/voidengine/locales"
 	"BlackHole/internal/voidengine/response"
 	"BlackHole/pkg/env"
+	"net"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -20,11 +21,11 @@ var (
 	apiRoutes = make(map[string][]router.Route)
 )
 
-func Run() {
-	apiRouter.Run(":8080")
+func Run(address string) error {
+	return apiRouter.Run(address)
 }
 
-func InitApi() {
+func InitApi(address string) {
 	gin.DefaultWriter = log.StandardLogger().Out
 	gin.DefaultErrorWriter = log.StandardLogger().Out
 
@@ -43,7 +44,7 @@ func InitApi() {
 	voidengine.SwaggerInfo.Title = "VoidEngen"
 	voidengine.SwaggerInfo.Version = "v1"
 	voidengine.SwaggerInfo.Description = "API 文档"
-	voidengine.SwaggerInfo.Host = "127.0.0.1:8080"
+	voidengine.SwaggerInfo.Host = swaggerHost(address)
 	voidengine.SwaggerInfo.BasePath = "/"
 	apiRouter.Static("/voidengine", "docs/api/voidengine")
 
@@ -71,6 +72,20 @@ func InitApi() {
 			}
 		}
 	}
+}
+
+func swaggerHost(address string) string {
+	host, port, err := net.SplitHostPort(address)
+	if err != nil {
+		return address
+	}
+
+	switch host {
+	case "", "0.0.0.0", "::":
+		host = "127.0.0.1"
+	}
+
+	return net.JoinHostPort(host, port)
 }
 
 func RegisteRoutes(group string, routes []router.Route) {
