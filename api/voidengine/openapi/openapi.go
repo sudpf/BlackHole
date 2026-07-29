@@ -21,8 +21,11 @@ var (
 	apiRoutes = make(map[string][]router.Route)
 )
 
-func Run(address string) error {
-	return apiRouter.Run(address)
+func NewServer(address string) *http.Server {
+	return &http.Server{
+		Addr:    address,
+		Handler: apiRouter,
+	}
 }
 
 func InitApi(address string) {

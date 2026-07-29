@@ -22,18 +22,6 @@ var (
 )
 
 type (
-	AppConf struct {
-		RunMode  string `yaml:"RunMode" json:",default=release"`
-		HttpAddr string `yaml:"HttpAddr" json:",default=127.0.0.1:10002"`
-	}
-
-	LogConf struct {
-		Level string `yaml:"Level" json:",default=info"`
-		Size  string `yaml:"Size" json:",default=256m"`
-		Dir   string `yaml:"Dir" json:",optional"`
-		Gin   string `yaml:"Gin" json:",optional"`
-	}
-
 	ConditionConf struct {
 		Key   string
 		Value string

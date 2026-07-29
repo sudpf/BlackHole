@@ -2,11 +2,14 @@ package config
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/BurntSushi/toml"
 	log "github.com/sirupsen/logrus"
+	"github.com/zeromicro/go-zero/core/conf"
 )
 
 type VoidEngineConfig struct {
@@ -53,6 +56,10 @@ func (c *VoidEngineConfig) ListenHTTP() string {
 	return c.App.ListenHttp
 }
 
+func (c *VoidEngineConfig) ShutdownTimeout() time.Duration {
+	return c.App.ShutdownTimeout
+}
+
 func GetVoidEngineConfig() *VoidEngineConfig {
 	return &GlobalVoidEngineConfig
 }
@@ -61,14 +68,14 @@ func ParseVoidEngineConfig(file string) error {
 	// 获取当前执行文件的路径
 	appPath, err := os.Executable()
 	if err != nil {
-		log.Fatalf("Failed to get executable path: %v", err)
+		return fmt.Errorf("get executable path: %w", err)
 	}
 	appVoidEngineName := filepath.Base(appPath)
 
 	// 获取绝对路径
 	absPath, err := filepath.Abs(appPath)
 	if err != nil {
-		log.Fatalf("Failed to get absolute path: %v", err)
+		return fmt.Errorf("get absolute executable path: %w", err)
 	}
 
 	// 获取目录路径
@@ -78,8 +85,8 @@ func ParseVoidEngineConfig(file string) error {
 		file = appVoidEngineBaseDir + "/../conf/" + file
 	}
 
-	if _, err := toml.DecodeFile(file, &GlobalVoidEngineConfig); err != nil {
-		return err
+	if err := conf.Load(file, &GlobalVoidEngineConfig); err != nil {
+		return fmt.Errorf("load voidengine config: %w", err)
 	}
 
 	if !filepath.IsAbs(GlobalVoidEngineConfig.Log.Dir) {

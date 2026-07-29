@@ -1,8 +1,11 @@
 package config
 
+import "time"
+
 type appConfig struct {
-	ListenHttp  string `toml:"listen_http" yaml:"Listenhttp" json:",default=127.0.0.1:80"`
-	ListenHttps string `toml:"listen_https" yaml:"ListenHttps" json:","`
+	ListenHttp      string        `toml:"listen_http" yaml:"ListenHttp" json:",default=127.0.0.1:80"`
+	ListenHttps     string        `toml:"listen_https" yaml:"ListenHttps" json:",optional"`
+	ShutdownTimeout time.Duration `toml:"shutdown_timeout" yaml:"ShutdownTimeout" json:",default=10s"`
 }
 
 type logConfig struct {
