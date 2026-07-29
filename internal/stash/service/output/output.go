@@ -1,6 +1,9 @@
 package output
 
-import "BlackHole/pkg/config"
+import (
+	"BlackHole/pkg/config"
+	"fmt"
+)
 
 type (
 	Writer interface {
@@ -17,24 +20,27 @@ func NewWriters(o *config.OutputConf) ([]Writer, error) {
 
 	if o.ElasticSearch != nil {
 		writer, err := NewElasticSearchWriter(o.ElasticSearch)
-		if err == nil {
-			writers = append(writers, writer)
+		if err != nil {
+			return nil, fmt.Errorf("initialize elasticsearch writer: %w", err)
 		}
+		writers = append(writers, writer)
 	}
 
 	if o.Clickhouse != nil && len(o.Clickhouse.Addr) > 0 {
 		writer, err := NewClickHouseWriter(o.Clickhouse)
-		if err == nil {
-			writers = append(writers, writer)
+		if err != nil {
+			return nil, fmt.Errorf("initialize clickhouse writer: %w", err)
 		}
+		writers = append(writers, writer)
 	}
 
 	if len(o.Syslogs) > 0 {
-		for _, syslog := range o.Syslogs {
+		for i, syslog := range o.Syslogs {
 			writer, err := NewSyslogWriter(syslog)
-			if err == nil {
-				writers = append(writers, writer)
+			if err != nil {
+				return nil, fmt.Errorf("initialize syslog writer %d: %w", i, err)
 			}
+			writers = append(writers, writer)
 		}
 	}
 

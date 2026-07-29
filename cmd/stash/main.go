@@ -15,10 +15,13 @@ func main() {
 	flag.Parse()
 
 	config.ParseStashConfig(*configFile)
+	cfg := config.GetStashConfig()
 
-	logger.InitLog(config.GetStashConfig().LogLevel(), config.GetStashConfig().AppLogFile())
+	logger.InitLog(cfg.LogLevel(), cfg.AppLogFile())
 
-	log.Info(config.GetStashConfig().String())
+	log.Info(cfg.String())
 
-	app.Run()
+	if err := app.Run(cfg); err != nil {
+		log.WithError(err).Fatal("Run Stash error")
+	}
 }

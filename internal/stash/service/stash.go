@@ -6,8 +6,8 @@ import (
 	"BlackHole/internal/stash/service/input"
 	"BlackHole/internal/stash/service/output"
 	"BlackHole/pkg/config"
+	"fmt"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/zeromicro/go-queue/kq"
 	"github.com/zeromicro/go-zero/core/proc"
 	"github.com/zeromicro/go-zero/core/service"
@@ -17,16 +17,16 @@ var (
 	group *service.ServiceGroup
 )
 
-func Init() {
-	proc.SetTimeToForceQuit(config.GlobalStashConfig.GracePeriod)
+func Init(cfg *config.StashConfig) error {
+	proc.SetTimeToForceQuit(cfg.GracePeriod)
 	group = service.NewServiceGroup()
 
-	for _, cluster := range config.GlobalStashConfig.Clusters {
+	for i, cluster := range cfg.Clusters {
 		filters := filter.CreateFilters(cluster)
 
 		writers, err := output.NewWriters(cluster.Output)
 		if err != nil {
-			log.Warnf("NewWriters err: %v", err)
+			return fmt.Errorf("initialize cluster %d writers: %w", i, err)
 		}
 
 		handle := handler.NewHandler()
@@ -45,6 +45,8 @@ func Init() {
 			}
 		}
 	}
+
+	return nil
 }
 
 func Run() {
