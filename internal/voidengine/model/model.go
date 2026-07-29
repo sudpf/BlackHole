@@ -6,8 +6,8 @@ import (
 )
 
 var (
-	cpDB *db.MySQLDatabase
-	dpDB *db.ClickHouseDatabase
+	userDAO    *UserDAO
+	trafficDAO *TrafficDAO
 )
 
 func InitDB(databaseConfig config.DatabaseConfig) error {
@@ -19,7 +19,7 @@ func InitDB(databaseConfig config.DatabaseConfig) error {
 		if err := mysqlDB.CreateTable(&User{}); err != nil {
 			panic(err)
 		}
-		cpDB = mysqlDB
+		userDAO = NewUserDAO(mysqlDB.DB)
 	}
 
 	if databaseConfig.ClickHouse != nil {
@@ -29,16 +29,16 @@ func InitDB(databaseConfig config.DatabaseConfig) error {
 		}
 		ckDB.CreateTable(&NetworkTraffic{})
 
-		dpDB = ckDB
+		trafficDAO = NewTrafficDAO(ckDB.DB)
 	}
 
 	return nil
 }
 
-func ControlPlanDB() *db.MySQLDatabase {
-	return cpDB
+func GetUserDAO() *UserDAO {
+	return userDAO
 }
 
-func DataPlanDB() *db.ClickHouseDatabase {
-	return dpDB
+func GetTrafficDAO() *TrafficDAO {
+	return trafficDAO
 }

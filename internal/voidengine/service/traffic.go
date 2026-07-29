@@ -20,23 +20,14 @@ func NewTrafficService() *TrafficService {
 }
 
 func (s *TrafficService) List(options TrafficListOptions) ([]model.NetworkTraffic, error) {
-	database := model.DataPlanDB()
-	if database == nil {
+	dao := model.GetTrafficDAO()
+	if dao == nil {
 		return nil, ErrDataPlanDBUnavailable
 	}
 
-	conditions := map[string]interface{}{
-		"PageNo":   options.PageNo,
-		"PageSize": options.PageSize,
-	}
-	if options.OrderBy != "" {
-		conditions["OrderBy"] = options.OrderBy
-	}
-
-	var traffics []model.NetworkTraffic
-	if _, err := database.Query(&traffics, conditions); err != nil {
-		return nil, err
-	}
-
-	return traffics, nil
+	return dao.List(model.TrafficQuery{
+		PageNo:   options.PageNo,
+		PageSize: options.PageSize,
+		OrderBy:  options.OrderBy,
+	})
 }

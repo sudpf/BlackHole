@@ -38,37 +38,26 @@ func NewUserService() *UserService {
 }
 
 func (s *UserService) List(options UserListOptions) ([]model.User, error) {
-	database := model.ControlPlanDB()
-	if database == nil {
+	dao := model.GetUserDAO()
+	if dao == nil {
 		return nil, ErrControlPlanDBUnavailable
 	}
 
-	conditions := map[string]interface{}{
-		"PageNo":   options.PageNo,
-		"PageSize": options.PageSize,
-	}
-	if options.Username != nil {
-		conditions["name"] = *options.Username
-	}
-	if options.OrderBy != "" {
-		conditions["OrderBy"] = options.OrderBy
-	}
-
-	var users []model.User
-	if _, err := database.Query(&users, conditions); err != nil {
-		return nil, err
-	}
-
-	return users, nil
+	return dao.List(model.UserQuery{
+		PageNo:   options.PageNo,
+		PageSize: options.PageSize,
+		OrderBy:  options.OrderBy,
+		Username: options.Username,
+	})
 }
 
 func (s *UserService) Add(input AddUserInput) error {
-	database := model.ControlPlanDB()
-	if database == nil {
+	dao := model.GetUserDAO()
+	if dao == nil {
 		return ErrControlPlanDBUnavailable
 	}
 
-	return database.Insert(&model.User{
+	return dao.Create(&model.User{
 		Name:     input.Username,
 		Password: input.Password,
 		Email:    input.Email,
@@ -77,20 +66,19 @@ func (s *UserService) Add(input AddUserInput) error {
 }
 
 func (s *UserService) Modify(input ModifyUserInput) error {
-	database := model.ControlPlanDB()
-	if database == nil {
+	dao := model.GetUserDAO()
+	if dao == nil {
 		return ErrControlPlanDBUnavailable
 	}
 
-	var users []model.User
-	if _, err := database.QueryEx(&users, &model.User{Name: input.Username}); err != nil {
+	user, err := dao.FindByName(input.Username)
+	if err != nil {
 		return err
 	}
-	if len(users) == 0 {
+	if user == nil {
 		return ErrUserNotFound
 	}
 
-	user := users[0]
 	if input.Password != nil {
 		user.Password = *input.Password
 	}
@@ -101,14 +89,14 @@ func (s *UserService) Modify(input ModifyUserInput) error {
 		user.Phone = *input.Phone
 	}
 
-	return database.Update(&user, map[string]interface{}{"name": input.Username})
+	return dao.Update(input.Username, user)
 }
 
 func (s *UserService) Delete(username string) error {
-	database := model.ControlPlanDB()
-	if database == nil {
+	dao := model.GetUserDAO()
+	if dao == nil {
 		return ErrControlPlanDBUnavailable
 	}
 
-	return database.Delete(&model.User{}, map[string]interface{}{"name": username})
+	return dao.DeleteByName(username)
 }
