@@ -35,9 +35,9 @@ func (h *Handler) ListNetworkTraffic(c *gin.Context, e *env.Env) {
 	})
 	if err != nil {
 		log.WithError(err).Error("List network traffic")
-		c.JSON(http.StatusInternalServerError, response.SytemError)
+		c.JSON(http.StatusInternalServerError, response.SystemError.Tr(e))
 		return
 	}
 
-	c.JSON(http.StatusOK, response.ApiSuccess.WithData(traffics))
+	c.JSON(http.StatusOK, response.ApiSuccess.Tr(e).WithData(traffics))
 }

@@ -18,7 +18,7 @@ import (
 // @Router /ping [get]
 func (h *Handler) PingGet(c *gin.Context, e *env.Env) {
 	log.WithField("clientip", e.ClientIp).Info("Get ping")
-	c.JSON(http.StatusOK, response.ApiSuccess.WithData("Get ping"))
+	c.JSON(http.StatusOK, response.ApiSuccess.Tr(e).WithData("Get ping"))
 }
 
 // PingPost
@@ -30,5 +30,5 @@ func (h *Handler) PingGet(c *gin.Context, e *env.Env) {
 // @Router /ping [post]
 func (h *Handler) PingPost(c *gin.Context, e *env.Env) {
 	log.WithField("clientip", e.ClientIp).Info("Post ping")
-	c.JSON(http.StatusOK, response.ApiSuccess.WithData("Post ping"))
+	c.JSON(http.StatusOK, response.ApiSuccess.Tr(e).WithData("Post ping"))
 }

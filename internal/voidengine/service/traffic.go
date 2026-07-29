@@ -1,11 +1,6 @@
 package service
 
-import (
-	"BlackHole/internal/voidengine/model"
-	"errors"
-)
-
-var ErrDataPlanDBUnavailable = errors.New("data plan database is unavailable")
+import "BlackHole/internal/voidengine/model"
 
 type TrafficService struct {
 	dao TrafficDataAccess
@@ -27,7 +22,7 @@ func NewTrafficService(dao TrafficDataAccess) *TrafficService {
 
 func (s *TrafficService) List(options TrafficListOptions) ([]model.NetworkTraffic, error) {
 	if s.dao == nil {
-		return nil, ErrDataPlanDBUnavailable
+		return nil, NewError(ErrorCodeDependencyUnavailable)
 	}
 
 	return s.dao.List(model.TrafficQuery{

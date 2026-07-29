@@ -1,14 +1,6 @@
 package service
 
-import (
-	"BlackHole/internal/voidengine/model"
-	"errors"
-)
-
-var (
-	ErrControlPlanDBUnavailable = errors.New("control plan database is unavailable")
-	ErrUserNotFound             = errors.New("user not found")
-)
+import "BlackHole/internal/voidengine/model"
 
 type UserService struct {
 	dao UserDataAccess
@@ -49,7 +41,7 @@ func NewUserService(dao UserDataAccess) *UserService {
 
 func (s *UserService) List(options UserListOptions) ([]model.User, error) {
 	if s.dao == nil {
-		return nil, ErrControlPlanDBUnavailable
+		return nil, NewError(ErrorCodeDependencyUnavailable)
 	}
 
 	return s.dao.List(model.UserQuery{
@@ -62,7 +54,7 @@ func (s *UserService) List(options UserListOptions) ([]model.User, error) {
 
 func (s *UserService) Add(input AddUserInput) error {
 	if s.dao == nil {
-		return ErrControlPlanDBUnavailable
+		return NewError(ErrorCodeDependencyUnavailable)
 	}
 
 	return s.dao.Create(&model.User{
@@ -75,7 +67,7 @@ func (s *UserService) Add(input AddUserInput) error {
 
 func (s *UserService) Modify(input ModifyUserInput) error {
 	if s.dao == nil {
-		return ErrControlPlanDBUnavailable
+		return NewError(ErrorCodeDependencyUnavailable)
 	}
 
 	user, err := s.dao.FindByName(input.Username)
@@ -83,7 +75,7 @@ func (s *UserService) Modify(input ModifyUserInput) error {
 		return err
 	}
 	if user == nil {
-		return ErrUserNotFound
+		return NewError(ErrorCodeUserNotFound)
 	}
 
 	if input.Password != nil {
@@ -101,7 +93,7 @@ func (s *UserService) Modify(input ModifyUserInput) error {
 
 func (s *UserService) Delete(username string) error {
 	if s.dao == nil {
-		return ErrControlPlanDBUnavailable
+		return NewError(ErrorCodeDependencyUnavailable)
 	}
 
 	return s.dao.DeleteByName(username)

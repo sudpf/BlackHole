@@ -5,7 +5,6 @@ import (
 	"BlackHole/api/voidengine/openapi/v1/message"
 	"BlackHole/internal/voidengine/service"
 	"BlackHole/pkg/env"
-	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -36,11 +35,11 @@ func (h *Handler) ListUser(c *gin.Context, e *env.Env) {
 		Username: request.Username,
 	})
 	if err != nil {
-		respondUserServiceError(c, err)
+		respondUserServiceError(c, e, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, response.ApiSuccess.WithData(users))
+	c.JSON(http.StatusOK, response.ApiSuccess.Tr(e).WithData(users))
 }
 
 // AddUser
@@ -66,11 +65,11 @@ func (h *Handler) AddUser(c *gin.Context, e *env.Env) {
 		Email:    request.Email,
 		Phone:    request.Phone,
 	}); err != nil {
-		respondUserServiceError(c, err)
+		respondUserServiceError(c, e, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, response.ApiSuccess)
+	c.JSON(http.StatusOK, response.ApiSuccess.Tr(e))
 }
 
 // ModifyUser
@@ -96,11 +95,11 @@ func (h *Handler) ModifyUser(c *gin.Context, e *env.Env) {
 		Email:    request.Email,
 		Phone:    request.Phone,
 	}); err != nil {
-		respondUserServiceError(c, err)
+		respondUserServiceError(c, e, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, response.ApiSuccess)
+	c.JSON(http.StatusOK, response.ApiSuccess.Tr(e))
 }
 
 // DeleteUser
@@ -121,19 +120,19 @@ func (h *Handler) DeleteUser(c *gin.Context, e *env.Env) {
 	}
 
 	if err := h.services.User.Delete(request.Username); err != nil {
-		respondUserServiceError(c, err)
+		respondUserServiceError(c, e, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, response.ApiSuccess)
+	c.JSON(http.StatusOK, response.ApiSuccess.Tr(e))
 }
 
-func respondUserServiceError(c *gin.Context, err error) {
-	if errors.Is(err, service.ErrUserNotFound) {
-		c.JSON(http.StatusBadRequest, response.UserNotExist)
+func respondUserServiceError(c *gin.Context, e *env.Env, err error) {
+	if service.IsErrorCode(err, service.ErrorCodeUserNotFound) {
+		c.JSON(http.StatusBadRequest, response.UserNotExist.Tr(e))
 		return
 	}
 
 	log.WithError(err).Error("Handle user request")
-	c.JSON(http.StatusInternalServerError, response.SytemError)
+	c.JSON(http.StatusInternalServerError, response.SystemError.Tr(e))
 }

@@ -37,7 +37,8 @@ func InitApi(address string) {
 	middleware.ApiLogMiddlewares(apiRouter)
 
 	apiRouter.NoRoute(func(c *gin.Context) {
-		c.JSON(http.StatusNotFound, response.InvalidParams)
+		e := env.NewEnv(c.GetHeader("Accept-Language"), c.ClientIP())
+		c.JSON(http.StatusNotFound, response.ApiNotFound.Tr(e))
 	})
 
 	swagger.SwaggerGenerator(apiRouter)
