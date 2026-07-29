@@ -4,6 +4,7 @@ import (
 	"BlackHole/pkg/config"
 	"database/sql"
 	"fmt"
+	"strings"
 
 	mysqlParser "github.com/go-sql-driver/mysql"
 	"github.com/sirupsen/logrus"
@@ -58,24 +59,17 @@ func (m *MySQLDatabase) CreateDatabase() error {
 		return err
 	}
 
-	log.Info(dbConfig)
-	dbExist, err := MySQLDatabaseExist(dbConfig.Addr, dbConfig.User, dbConfig.Passwd, dbConfig.DBName)
-	if err != nil {
-		return err
-	}
-
-	if dbExist {
-		return nil
-	}
-
 	db, err := sql.Open("mysql", fmt.Sprintf("%s:%s@tcp(%s)/", dbConfig.User, dbConfig.Passwd, dbConfig.Addr))
 	if err != nil {
-		log.Info(err)
 		return err
 	}
 	defer db.Close()
 
-	_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s", dbConfig.DBName))
+	if err := db.Ping(); err != nil {
+		return err
+	}
+
+	_, err = db.Exec(fmt.Sprintf("CREATE DATABASE IF NOT EXISTS `%s`", escapeMySQLIdentifier(dbConfig.DBName)))
 	return err
 }
 
@@ -139,18 +133,6 @@ func NewMySQLDatabase(connectionString string, debug bool, logFile string) (*MyS
 	return db, nil
 }
 
-func MySQLDatabaseExist(addr, user, passwd, dbName string) (bool, error) {
-	db, err := sql.Open("mysql", fmt.Sprintf("%s:%s@tcp(%s)/", user, passwd, addr))
-	if err != nil {
-		return false, err
-	}
-	defer db.Close()
-
-	rows, err := db.Query(fmt.Sprintf("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '%s'", dbName))
-	if err != nil {
-		return false, err
-	}
-	defer rows.Close()
-
-	return rows.Next(), nil
+func escapeMySQLIdentifier(identifier string) string {
+	return strings.ReplaceAll(identifier, "`", "``")
 }
