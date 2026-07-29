@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	configFile := flag.String("config-file", "voidengine.conf", "config file")
+	configFile := flag.String("config-file", "voidengine.toml", "config file")
 	flag.Parse()
 
 	err := config.ParseVoidEngineConfig(*configFile)

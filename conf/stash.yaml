@@ -1,30 +1,30 @@
-App:
-  ListenHttp: 127.0.0.1:8002
-  ListenHttps: 127.0.0.1:8003
+app:
+  listen_http: 127.0.0.1:8002
+  listen_https: 127.0.0.1:8003
 
-Log:
-  Level: info
-  Size: 256m
-  Dir: logs
+log:
+  level: info
+  size: 256m
+  dir: logs
 
-Clusters:
-- Input:
-    Syslogs:
-    - Protocol: Unixgram
-      Address: /tmp/suricata_unix_sock
-      Processors: 2
-  Filters:
-  - Action: drop
-    Conditions:
-      - Key: k8s_container_name
-        Value: "-rpc"
-        Type: contains
-      - Key: level
-        Value: info
-        Type: match
-        Op: and
-  - Action: remove_field
-    Fields:
+clusters:
+- input:
+    syslogs:
+    - protocol: Unixgram
+      address: /tmp/suricata_unix_sock
+      processors: 2
+  filters:
+  - action: drop
+    conditions:
+      - key: k8s_container_name
+        value: "-rpc"
+        type: contains
+      - key: level
+        value: info
+        type: match
+        op: and
+  - action: remove_field
+    fields:
       - message
       - _source
       - _type
@@ -39,18 +39,18 @@ Clusters:
       - prospector
       - source
       - stream
-  - Action: transfer
-    Field: content
-  Output:
-    Clickhouse:
-      Addr:
+  - action: transfer
+    field: content
+  output:
+    clickhouse:
+      addr:
       - 192.168.3.143:9000
-      Auth:
-        Database: voidengine
-        Username: default
-        Password: "123456"
-      Table: network_traffics
-      Columns:
+      auth:
+        database: voidengine
+        username: default
+        password: "123456"
+      table: network_traffics
+      columns:
       - timestamp
       - source_ip
       - destination_ip
@@ -61,5 +61,5 @@ Clusters:
       - bytes_out
       - packet_count
       - description
-      Interval: 1
-      MaxChunkBytes: 157286400
+      interval: 1
+      max_chunk_bytes: 157286400

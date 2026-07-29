@@ -23,104 +23,104 @@ var (
 
 type (
 	ConditionConf struct {
-		Key   string
-		Value string
-		Type  string `json:",default=match,options=match|contains"`
-		Op    string `json:",default=and,options=and|or"`
+		Key   string `yaml:"key" json:"key"`
+		Value string `yaml:"value" json:"value"`
+		Type  string `yaml:"type" json:"type,default=match,options=match|contains"`
+		Op    string `yaml:"op" json:"op,default=and,options=and|or"`
 	}
 
 	ElasticSearchConf struct {
-		Hosts         []string
-		Index         string
-		DocType       string `json:",default=doc"`
-		TimeZone      string `json:",optional"`
-		MaxChunkBytes int    `json:",default=15728640"` // default 15M
-		Compress      bool   `json:",default=false"`
-		Username      string `json:",optional"`
-		Password      string `json:",optional"`
+		Hosts         []string `yaml:"hosts" json:"hosts"`
+		Index         string   `yaml:"index" json:"index"`
+		DocType       string   `yaml:"doc_type" json:"doc_type,default=doc"`
+		TimeZone      string   `yaml:"time_zone" json:"time_zone,optional"`
+		MaxChunkBytes int      `yaml:"max_chunk_bytes" json:"max_chunk_bytes,default=15728640"` // default 15M
+		Compress      bool     `yaml:"compress" json:"compress,default=false"`
+		Username      string   `yaml:"username" json:"username,optional"`
+		Password      string   `yaml:"password" json:"password,optional"`
 	}
 
 	SyslogAddrConf struct {
-		Protocol string   `yaml:"Protocol" json:",default=Udp"`
-		Address  string   `yaml:"Address"`
-		Port     int      `yaml:"Port"`
-		Columns  []string `yaml:"Columns" json:",optional"`
+		Protocol string   `yaml:"protocol" json:"protocol,default=Udp"`
+		Address  string   `yaml:"address" json:"address"`
+		Port     int      `yaml:"port" json:"port"`
+		Columns  []string `yaml:"columns" json:"columns,optional"`
 	}
 
 	SyslogOutputConf struct {
-		Conditions  [][]*ConditionConf `yaml:"Conditions" json:",optional"`
-		SyslogAddrs []*SyslogAddrConf  `yaml:"SyslogAddrs" json:",optional"`
+		Conditions  [][]*ConditionConf `yaml:"conditions" json:"conditions,optional"`
+		SyslogAddrs []*SyslogAddrConf  `yaml:"syslog_addrs" json:"syslog_addrs,optional"`
 	}
 
 	FilterConf struct {
-		Action     string          `json:",options=drop|remove_field|transfer"`
-		Conditions []ConditionConf `json:",optional"`
-		Fields     []string        `json:",optional"`
-		Field      string          `json:",optional"`
-		Target     string          `json:",optional"`
+		Action     string          `yaml:"action" json:"action,options=drop|remove_field|transfer"`
+		Conditions []ConditionConf `yaml:"conditions" json:"conditions,optional"`
+		Fields     []string        `yaml:"fields" json:"fields,optional"`
+		Field      string          `yaml:"field" json:"field,optional"`
+		Target     string          `yaml:"target" json:"target,optional"`
 	}
 
 	SyslogServiceConf struct {
-		Protocol   string `yaml:"Protocol" json:",default=Udp"`
-		Ssl        string `yaml:"Ssl,omitempty" json:"Ssl,options=on|off,default=off"`
-		Address    string `yaml:"Address,omitempty" json:",optional"`
-		Port       int    `yaml:"Port,omitempty" json:",optional"`
-		Processors int    `yaml:"Processors" json:",default=2"`
+		Protocol   string `yaml:"protocol" json:"protocol,default=Udp"`
+		Ssl        string `yaml:"ssl,omitempty" json:"ssl,options=on|off,default=off"`
+		Address    string `yaml:"address,omitempty" json:"address,optional"`
+		Port       int    `yaml:"port,omitempty" json:"port,optional"`
+		Processors int    `yaml:"processors" json:"processors,default=2"`
 	}
 
 	KafkaConf struct {
 		service.ServiceConf
-		Brokers    []string
-		Group      string
-		Topics     []string
-		Offset     string `json:",options=first|last,default=last"`
-		Conns      int    `json:",default=1"`
-		Consumers  int    `json:",default=8"`
-		Processors int    `json:",default=8"`
-		MinBytes   int    `json:",default=10240"`    // 10K
-		MaxBytes   int    `json:",default=10485760"` // 10M
-		Username   string `json:",optional"`
-		Password   string `json:",optional"`
+		Brokers    []string `yaml:"brokers" json:"brokers"`
+		Group      string   `yaml:"group" json:"group"`
+		Topics     []string `yaml:"topics" json:"topics"`
+		Offset     string   `yaml:"offset" json:"offset,options=first|last,default=last"`
+		Conns      int      `yaml:"conns" json:"conns,default=1"`
+		Consumers  int      `yaml:"consumers" json:"consumers,default=8"`
+		Processors int      `yaml:"processors" json:"processors,default=8"`
+		MinBytes   int      `yaml:"min_bytes" json:"min_bytes,default=10240"`    // default 10K
+		MaxBytes   int      `yaml:"max_bytes" json:"max_bytes,default=10485760"` // default 10M
+		Username   string   `yaml:"username" json:"username,optional"`
+		Password   string   `yaml:"password" json:"password,optional"`
 	}
 
 	ClickHouseAuthConf struct {
-		Database string `yaml:"Database" json:"Database"`
-		Username string `yaml:"Username" json:"Username"`
-		Password string `yaml:"Password" json:"Password"`
+		Database string `yaml:"database" json:"database"`
+		Username string `yaml:"username" json:"username"`
+		Password string `yaml:"password" json:"password"`
 	}
 
 	ClickHouseConf struct {
-		Addr           []string           `yaml:"Addr" json:"Addr"`
-		Auth           ClickHouseAuthConf `yaml:"Auth" json:"Auth"`
-		Table          string             `yaml:"Table" json:"Table"`
-		Columns        []string           `yaml:"Columns" json:",optional"`
-		FillNoneColumn bool               `yaml:"FillNoneColumn" json:",default=true"`
-		Interval       int64              `yaml:"Interval" json:"interval,default=15"`
-		MaxChunkBytes  int                `yaml:"MaxChunkBytes" json:",default=15728640"` // default 15M
+		Addr           []string           `yaml:"addr" json:"addr"`
+		Auth           ClickHouseAuthConf `yaml:"auth" json:"auth"`
+		Table          string             `yaml:"table" json:"table"`
+		Columns        []string           `yaml:"columns" json:"columns,optional"`
+		FillNoneColumn bool               `yaml:"fill_none_column" json:"fill_none_column,default=true"`
+		Interval       int64              `yaml:"interval" json:"interval,default=15"`
+		MaxChunkBytes  int                `yaml:"max_chunk_bytes" json:"max_chunk_bytes,default=15728640"` // default 15M
 	}
 
 	InputConf struct {
-		Syslogs []*SyslogServiceConf `yaml:"Syslogs,omitempty" json:",optional"`
-		Kafka   *KafkaConf           `yaml:"Kafka,omitempty" json:",optional"`
+		Syslogs []*SyslogServiceConf `yaml:"syslogs,omitempty" json:"syslogs,optional"`
+		Kafka   *KafkaConf           `yaml:"kafka,omitempty" json:"kafka,optional"`
 	}
 
 	OutputConf struct {
-		ElasticSearch *ElasticSearchConf  `yaml:"ElasticSearch,omitempty" json:",optional"`
-		Syslogs       []*SyslogOutputConf `yaml:"Syslogs,omitempty" json:",optional"`
-		Clickhouse    *ClickHouseConf     `yaml:"Clickhouse,omitempty" json:",optional"`
+		ElasticSearch *ElasticSearchConf  `yaml:"elasticsearch,omitempty" json:"elasticsearch,optional"`
+		Syslogs       []*SyslogOutputConf `yaml:"syslogs,omitempty" json:"syslogs,optional"`
+		Clickhouse    *ClickHouseConf     `yaml:"clickhouse,omitempty" json:"clickhouse,optional"`
 	}
 
 	ClusterConf struct {
-		Input   *InputConf   `yaml:"Input,omitempty" json:"Input,optional"`
-		Filters []FilterConf `yaml:"Filters,omitempty" json:",optional"`
-		Output  *OutputConf  `yaml:"Output,omitempty" json:"Output,optional"`
+		Input   *InputConf   `yaml:"input,omitempty" json:"input,optional"`
+		Filters []FilterConf `yaml:"filters,omitempty" json:"filters,optional"`
+		Output  *OutputConf  `yaml:"output,omitempty" json:"output,optional"`
 	}
 
 	StashConfig struct {
-		App         appConfig      `yaml:"App" json:"App"`
-		Log         logConfig      `yaml:"Log" json:"Log"`
-		Clusters    []*ClusterConf `yaml:"Clusters" json:"Clusters"`
-		GracePeriod time.Duration  `yaml:"GracePeriod" json:",default=10s"`
+		App         appConfig      `yaml:"app" json:"app"`
+		Log         logConfig      `yaml:"log" json:"log"`
+		Clusters    []*ClusterConf `yaml:"clusters" json:"clusters"`
+		GracePeriod time.Duration  `yaml:"grace_period" json:"grace_period,default=10s"`
 	}
 )
 

@@ -13,10 +13,10 @@ import (
 )
 
 type VoidEngineConfig struct {
-	Title    string
-	App      appConfig
-	Log      logConfig
-	Database DatabaseConfig `toml:"database"`
+	Title    string         `toml:"title" yaml:"title" json:"title,optional"`
+	App      appConfig      `toml:"app" yaml:"app" json:"app"`
+	Log      logConfig      `toml:"log" yaml:"log" json:"log"`
+	Database DatabaseConfig `toml:"database" yaml:"database" json:"database"`
 }
 
 var (
