@@ -81,12 +81,12 @@ func InitApi(address string) {
 func swaggerHost(address string) string {
 	host, port, err := net.SplitHostPort(address)
 	if err != nil {
-		return address
+		return ""
 	}
 
 	switch host {
-	case "", "0.0.0.0", "::":
-		host = "127.0.0.1"
+	case "", "0.0.0.0", "::", "127.0.0.1", "localhost":
+		return ""
 	}
 
 	return net.JoinHostPort(host, port)
