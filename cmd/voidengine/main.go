@@ -15,10 +15,7 @@ func main() {
 
 	err := config.ParseVoidEngineConfig(*configFile)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Error("Parse config file error")
-		return
+		log.WithError(err).Fatal("Parse config file error")
 	}
 
 	cfg := config.GetVoidEngineConfig()

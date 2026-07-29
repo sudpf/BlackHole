@@ -3,6 +3,7 @@ package db
 import (
 	"BlackHole/pkg/config"
 	"fmt"
+	"strings"
 
 	clickhouseParser "github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/sirupsen/logrus"
@@ -42,6 +43,10 @@ func (c *ClickHouseDatabase) Connect(connectionString string) (*gorm.DB, error) 
 }
 
 func (c *ClickHouseDatabase) Close() error {
+	if c.DB == nil {
+		return nil
+	}
+
 	sqlDB, err := c.DB.DB()
 	if err != nil {
 		return err
@@ -69,23 +74,31 @@ func (c *ClickHouseDatabase) CreateDatabase() error {
 	// 解析 DSN
 	connParams, err := clickhouseParser.ParseDSN(c.link)
 	if err != nil {
-		log.Fatalf("failed to parse DSN: %v", err)
+		return fmt.Errorf("parse clickhouse dsn: %w", err)
+	}
+
+	if len(connParams.Addr) == 0 {
+		return fmt.Errorf("parse clickhouse dsn: missing address")
 	}
 
 	dsn := fmt.Sprintf("tcp://%s?username=%s&password=%s&read_timeout=10s",
 		connParams.Addr[0], connParams.Auth.Username, connParams.Auth.Password)
-	log.Info(dsn)
 	db, err := gorm.Open(clickhouse.Open(dsn), &gorm.Config{Logger: la})
 	if err != nil {
-		log.Fatalf("failed to connect to ClickHouse: %v", err)
+		return fmt.Errorf("connect clickhouse admin: %w", err)
 	}
+	sqlDB, err := db.DB()
+	if err != nil {
+		return fmt.Errorf("get clickhouse sql db: %w", err)
+	}
+	defer sqlDB.Close()
 
 	// 使用原生 SQL 创建新数据库
-	if err := db.Exec(fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", connParams.Auth.Database)).Error; err != nil {
-		log.Fatalf("failed to create database: %v", err)
+	if err := db.Exec(fmt.Sprintf("CREATE DATABASE IF NOT EXISTS `%s`", escapeClickHouseIdentifier(connParams.Auth.Database))).Error; err != nil {
+		return fmt.Errorf("create clickhouse database %q: %w", connParams.Auth.Database, err)
 	}
 
-	return err
+	return nil
 }
 
 func (c *ClickHouseDatabase) Query(model interface{}, conditions map[string]interface{}) (*gorm.DB, error) {
@@ -151,4 +164,8 @@ func NewClickHouseDatabase(connectionString string, debug bool, logFile string) 
 	}
 	db.DB = clickhouseDb
 	return db, nil
+}
+
+func escapeClickHouseIdentifier(identifier string) string {
+	return strings.ReplaceAll(identifier, "`", "``")
 }
