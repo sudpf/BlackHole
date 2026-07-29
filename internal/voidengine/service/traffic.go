@@ -7,7 +7,13 @@ import (
 
 var ErrDataPlanDBUnavailable = errors.New("data plan database is unavailable")
 
-type TrafficService struct{}
+type TrafficService struct {
+	dao TrafficDataAccess
+}
+
+type TrafficDataAccess interface {
+	List(query model.TrafficQuery) ([]model.NetworkTraffic, error)
+}
 
 type TrafficListOptions struct {
 	PageNo   int
@@ -15,17 +21,16 @@ type TrafficListOptions struct {
 	OrderBy  string
 }
 
-func NewTrafficService() *TrafficService {
-	return &TrafficService{}
+func NewTrafficService(dao TrafficDataAccess) *TrafficService {
+	return &TrafficService{dao: dao}
 }
 
 func (s *TrafficService) List(options TrafficListOptions) ([]model.NetworkTraffic, error) {
-	dao := model.GetTrafficDAO()
-	if dao == nil {
+	if s.dao == nil {
 		return nil, ErrDataPlanDBUnavailable
 	}
 
-	return dao.List(model.TrafficQuery{
+	return s.dao.List(model.TrafficQuery{
 		PageNo:   options.PageNo,
 		PageSize: options.PageSize,
 		OrderBy:  options.OrderBy,

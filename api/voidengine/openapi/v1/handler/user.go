@@ -22,14 +22,14 @@ import (
 // @Success 200 {object} response.ApiResponse
 // @Failure 400 {object} response.ApiResponse
 // @Router /v1/user [get]
-func ListUser(c *gin.Context, e *env.Env) {
+func (h *Handler) ListUser(c *gin.Context, e *env.Env) {
 	var request message.ListUserRequest
 	if err := c.ShouldBindQuery(&request); err != nil {
 		c.JSON(http.StatusBadRequest, response.InvalidParams.Tr(e).WithData(e.TranslatErrors(err)))
 		return
 	}
 
-	users, err := service.NewUserService().List(service.UserListOptions{
+	users, err := h.services.User.List(service.UserListOptions{
 		PageNo:   request.PageNo,
 		PageSize: request.PageSize,
 		OrderBy:  request.OrderBy,
@@ -53,14 +53,14 @@ func ListUser(c *gin.Context, e *env.Env) {
 // @Success 200 {object} response.ApiResponse
 // @Failure 400 {object} response.ApiResponse
 // @Router /v1/user [post]
-func AddUser(c *gin.Context, e *env.Env) {
+func (h *Handler) AddUser(c *gin.Context, e *env.Env) {
 	var request message.AddUserRequest
 	if err := c.ShouldBind(&request); err != nil {
 		c.JSON(http.StatusBadRequest, response.InvalidParams.Tr(e).WithData(e.TranslatErrors(err)))
 		return
 	}
 
-	if err := service.NewUserService().Add(service.AddUserInput{
+	if err := h.services.User.Add(service.AddUserInput{
 		Username: request.Username,
 		Password: request.Password,
 		Email:    request.Email,
@@ -83,14 +83,14 @@ func AddUser(c *gin.Context, e *env.Env) {
 // @Success 200 {object} response.ApiResponse
 // @Failure 400 {object} response.ApiResponse
 // @Router /v1/user [put]
-func ModifyUser(c *gin.Context, e *env.Env) {
+func (h *Handler) ModifyUser(c *gin.Context, e *env.Env) {
 	var request message.ModifyUserRequest
 	if err := c.ShouldBind(&request); err != nil {
 		c.JSON(http.StatusBadRequest, response.InvalidParams.Tr(e).WithData(e.TranslatErrors(err)))
 		return
 	}
 
-	if err := service.NewUserService().Modify(service.ModifyUserInput{
+	if err := h.services.User.Modify(service.ModifyUserInput{
 		Username: request.Username,
 		Password: request.Password,
 		Email:    request.Email,
@@ -113,14 +113,14 @@ func ModifyUser(c *gin.Context, e *env.Env) {
 // @Success 200 {object} response.ApiResponse
 // @Failure 400 {object} response.ApiResponse
 // @Router /v1/user [delete]
-func DeleteUser(c *gin.Context, e *env.Env) {
+func (h *Handler) DeleteUser(c *gin.Context, e *env.Env) {
 	var request message.DeleteUserRequest
 	if err := c.ShouldBind(&request); err != nil {
 		c.JSON(http.StatusBadRequest, response.InvalidParams.Tr(e).WithData(e.TranslatErrors(err)))
 		return
 	}
 
-	if err := service.NewUserService().Delete(request.Username); err != nil {
+	if err := h.services.User.Delete(request.Username); err != nil {
 		respondUserServiceError(c, err)
 		return
 	}

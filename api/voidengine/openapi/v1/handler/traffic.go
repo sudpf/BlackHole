@@ -21,14 +21,14 @@ import (
 // @Success 200 {object} response.ApiResponse
 // @Failure 400 {object} response.ApiResponse
 // @Router /v1/traffic [get]
-func ListNetworkTraffic(c *gin.Context, e *env.Env) {
+func (h *Handler) ListNetworkTraffic(c *gin.Context, e *env.Env) {
 	var request message.ListNetworkTrafficRequest
 	if err := c.ShouldBindQuery(&request); err != nil {
 		c.JSON(http.StatusBadRequest, response.InvalidParams.Tr(e).WithData(e.TranslatErrors(err)))
 		return
 	}
 
-	traffics, err := service.NewTrafficService().List(service.TrafficListOptions{
+	traffics, err := h.services.Traffic.List(service.TrafficListOptions{
 		PageNo:   request.PageNo,
 		PageSize: request.PageSize,
 		OrderBy:  request.OrderBy,

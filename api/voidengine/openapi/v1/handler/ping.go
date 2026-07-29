@@ -16,7 +16,7 @@ import (
 // @Produce json
 // @Success 200 {object} response.ApiResponse
 // @Router /ping [get]
-func PingGet(c *gin.Context, e *env.Env) {
+func (h *Handler) PingGet(c *gin.Context, e *env.Env) {
 	log.WithField("clientip", e.ClientIp).Info("Get ping")
 	c.JSON(http.StatusOK, response.ApiSuccess.WithData("Get ping"))
 }
@@ -28,7 +28,7 @@ func PingGet(c *gin.Context, e *env.Env) {
 // @Produce json
 // @Success 200 {object} response.ApiResponse
 // @Router /ping [post]
-func PingPost(c *gin.Context, e *env.Env) {
+func (h *Handler) PingPost(c *gin.Context, e *env.Env) {
 	log.WithField("clientip", e.ClientIp).Info("Post ping")
 	c.JSON(http.StatusOK, response.ApiSuccess.WithData("Post ping"))
 }

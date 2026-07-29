@@ -10,7 +10,17 @@ var (
 	ErrUserNotFound             = errors.New("user not found")
 )
 
-type UserService struct{}
+type UserService struct {
+	dao UserDataAccess
+}
+
+type UserDataAccess interface {
+	List(query model.UserQuery) ([]model.User, error)
+	Create(user *model.User) error
+	FindByName(username string) (*model.User, error)
+	Update(username string, user *model.User) error
+	DeleteByName(username string) error
+}
 
 type UserListOptions struct {
 	PageNo   int
@@ -33,17 +43,16 @@ type ModifyUserInput struct {
 	Phone    *string
 }
 
-func NewUserService() *UserService {
-	return &UserService{}
+func NewUserService(dao UserDataAccess) *UserService {
+	return &UserService{dao: dao}
 }
 
 func (s *UserService) List(options UserListOptions) ([]model.User, error) {
-	dao := model.GetUserDAO()
-	if dao == nil {
+	if s.dao == nil {
 		return nil, ErrControlPlanDBUnavailable
 	}
 
-	return dao.List(model.UserQuery{
+	return s.dao.List(model.UserQuery{
 		PageNo:   options.PageNo,
 		PageSize: options.PageSize,
 		OrderBy:  options.OrderBy,
@@ -52,12 +61,11 @@ func (s *UserService) List(options UserListOptions) ([]model.User, error) {
 }
 
 func (s *UserService) Add(input AddUserInput) error {
-	dao := model.GetUserDAO()
-	if dao == nil {
+	if s.dao == nil {
 		return ErrControlPlanDBUnavailable
 	}
 
-	return dao.Create(&model.User{
+	return s.dao.Create(&model.User{
 		Name:     input.Username,
 		Password: input.Password,
 		Email:    input.Email,
@@ -66,12 +74,11 @@ func (s *UserService) Add(input AddUserInput) error {
 }
 
 func (s *UserService) Modify(input ModifyUserInput) error {
-	dao := model.GetUserDAO()
-	if dao == nil {
+	if s.dao == nil {
 		return ErrControlPlanDBUnavailable
 	}
 
-	user, err := dao.FindByName(input.Username)
+	user, err := s.dao.FindByName(input.Username)
 	if err != nil {
 		return err
 	}
@@ -89,14 +96,13 @@ func (s *UserService) Modify(input ModifyUserInput) error {
 		user.Phone = *input.Phone
 	}
 
-	return dao.Update(input.Username, user)
+	return s.dao.Update(input.Username, user)
 }
 
 func (s *UserService) Delete(username string) error {
-	dao := model.GetUserDAO()
-	if dao == nil {
+	if s.dao == nil {
 		return ErrControlPlanDBUnavailable
 	}
 
-	return dao.DeleteByName(username)
+	return s.dao.DeleteByName(username)
 }

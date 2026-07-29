@@ -7,8 +7,8 @@ import (
 	"BlackHole/api/wrapper"
 )
 
-func registerTrafficRoutes() {
+func registerTrafficRoutes(h *handler.Handler) {
 	openapi.RegisterRoutes("v1", []router.Route{
-		router.NewGetRoute("/traffic", wrapper.WrapperEnvFunc(handler.ListNetworkTraffic)),
+		router.NewGetRoute("/traffic", wrapper.WrapperEnvFunc(h.ListNetworkTraffic)),
 	})
 }
