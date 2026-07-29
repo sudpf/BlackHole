@@ -2,6 +2,7 @@ package config
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -168,14 +169,14 @@ func ParseStashConfig(file string) error {
 	// 获取当前执行文件的路径
 	appPath, err := os.Executable()
 	if err != nil {
-		log.Fatalf("Failed to get executable path: %v", err)
+		return fmt.Errorf("get executable path: %w", err)
 	}
 	appStashName = filepath.Base(appPath)
 
 	// 获取绝对路径
 	absPath, err := filepath.Abs(appPath)
 	if err != nil {
-		log.Fatalf("Failed to get absolute path: %v", err)
+		return fmt.Errorf("get absolute executable path: %w", err)
 	}
 
 	// 获取目录路径
@@ -185,7 +186,9 @@ func ParseStashConfig(file string) error {
 		file = appStashBaseDir + "/../conf/" + file
 	}
 
-	conf.MustLoad(file, &GlobalStashConfig)
+	if err := conf.Load(file, &GlobalStashConfig); err != nil {
+		return fmt.Errorf("load stash config: %w", err)
+	}
 
 	if !filepath.IsAbs(GlobalStashConfig.Log.Dir) {
 		GlobalStashConfig.Log.Dir = appStashBaseDir + "/../" + GlobalStashConfig.Log.Dir
