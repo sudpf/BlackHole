@@ -15,8 +15,7 @@ func main() {
 	flag.Parse()
 
 	if err := config.ParseStashConfig(*configFile); err != nil {
-		log.WithError(err).Error("Parse config file error")
-		return
+		log.WithError(err).Fatal("Parse config file error")
 	}
 	cfg := config.GetStashConfig()
 

@@ -49,10 +49,19 @@ func Init(cfg *config.StashConfig) error {
 	return nil
 }
 
-func Run() {
+func Run() error {
+	if group == nil {
+		return fmt.Errorf("service group not initialized")
+	}
+
 	group.Start()
+	return nil
 }
 
 func Stop() {
+	if group == nil {
+		return
+	}
+
 	group.Stop()
 }

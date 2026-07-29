@@ -1,8 +1,10 @@
 package app
 
 import (
+	"BlackHole/internal/runtime"
 	"BlackHole/internal/stash/service"
 	"BlackHole/pkg/config"
+	"context"
 	"fmt"
 )
 
@@ -11,6 +13,21 @@ func Run(cfg *config.StashConfig) error {
 		return fmt.Errorf("initialize service: %w", err)
 	}
 
-	service.Run()
+	if err := runtime.Run(runtime.Runner{
+		Name: "Stash",
+		Run: func() error {
+			if err := service.Run(); err != nil {
+				return fmt.Errorf("run service: %w", err)
+			}
+			return nil
+		},
+		Shutdown: func(context.Context) error {
+			service.Stop()
+			return nil
+		},
+	}); err != nil {
+		return err
+	}
+
 	return nil
 }

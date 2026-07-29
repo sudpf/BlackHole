@@ -4,6 +4,7 @@ import (
 	"BlackHole/api/voidengine/openapi"
 	v1handler "BlackHole/api/voidengine/openapi/v1/handler"
 	v1router "BlackHole/api/voidengine/openapi/v1/router"
+	"BlackHole/internal/runtime"
 	"BlackHole/internal/voidengine/model"
 	"BlackHole/internal/voidengine/service"
 	"BlackHole/pkg/config"
@@ -11,11 +12,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
-
-	log "github.com/sirupsen/logrus"
 )
 
 func Run(cfg *config.VoidEngineConfig) (err error) {
@@ -37,35 +33,23 @@ func Run(cfg *config.VoidEngineConfig) (err error) {
 	openapi.InitApi(listenAddress)
 
 	server := openapi.NewServer(listenAddress)
-	serverErr := make(chan error, 1)
-	go func() {
-		if serveErr := server.ListenAndServe(); serveErr != nil && !errors.Is(serveErr, http.ErrServerClosed) {
-			serverErr <- fmt.Errorf("listen and serve: %w", serveErr)
-		}
-		close(serverErr)
-	}()
-
-	signalCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
-
-	select {
-	case serveErr := <-serverErr:
-		if serveErr != nil {
-			return fmt.Errorf("run OpenAPI: %w", serveErr)
-		}
-	case <-signalCtx.Done():
-		log.Info("Shutting down VoidEngine")
-
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), cfg.ShutdownTimeout())
-		defer cancel()
-
-		if shutdownErr := server.Shutdown(shutdownCtx); shutdownErr != nil {
-			return fmt.Errorf("shutdown OpenAPI: %w", shutdownErr)
-		}
-
-		if serveErr := <-serverErr; serveErr != nil {
-			return fmt.Errorf("run OpenAPI: %w", serveErr)
-		}
+	if err := runtime.Run(runtime.Runner{
+		Name:            "VoidEngine",
+		ShutdownTimeout: cfg.ShutdownTimeout(),
+		Run: func() error {
+			if serveErr := server.ListenAndServe(); serveErr != nil && !errors.Is(serveErr, http.ErrServerClosed) {
+				return fmt.Errorf("run OpenAPI: listen and serve: %w", serveErr)
+			}
+			return nil
+		},
+		Shutdown: func(ctx context.Context) error {
+			if err := server.Shutdown(ctx); err != nil {
+				return fmt.Errorf("shutdown OpenAPI: %w", err)
+			}
+			return nil
+		},
+	}); err != nil {
+		return err
 	}
 
 	return nil
