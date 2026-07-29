@@ -1,11 +1,7 @@
 package main
 
 import (
-	"BlackHole/api/voidengine/openapi"
-	v1handler "BlackHole/api/voidengine/openapi/v1/handler"
-	v1router "BlackHole/api/voidengine/openapi/v1/router"
-	"BlackHole/internal/voidengine/model"
-	"BlackHole/internal/voidengine/service"
+	"BlackHole/internal/voidengine/app"
 	"BlackHole/pkg/config"
 	"BlackHole/pkg/logger"
 	"flag"
@@ -30,17 +26,7 @@ func main() {
 
 	log.Info(cfg.String())
 
-	listenAddress := cfg.ListenHTTP()
-	models, err := model.New(cfg.Database)
-	if err != nil {
-		log.WithError(err).Fatal("Initialize models error")
-	}
-	services := service.New(models)
-	handlers := v1handler.New(services)
-
-	v1router.RegisterRoutes(handlers)
-	openapi.InitApi(listenAddress)
-	if err := openapi.Run(listenAddress); err != nil {
-		log.WithError(err).Fatal("Run OpenAPI error")
+	if err := app.Run(cfg); err != nil {
+		log.WithError(err).Fatal("Run VoidEngine error")
 	}
 }

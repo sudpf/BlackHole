@@ -1,7 +1,7 @@
 package main
 
 import (
-	"BlackHole/internal/stash/service"
+	"BlackHole/internal/stash/app"
 	"BlackHole/pkg/config"
 	"BlackHole/pkg/logger"
 	"flag"
@@ -20,6 +20,5 @@ func main() {
 
 	log.Info(config.GetStashConfig().String())
 
-	service.Init()
-	service.Run()
+	app.Run()
 }
