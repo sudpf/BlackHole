@@ -17,11 +17,31 @@ var (
 	group *service.ServiceGroup
 )
 
-func Init(cfg *config.StashConfig) error {
+func Init(cfg *config.StashConfig) (err error) {
+	if cfg == nil {
+		return fmt.Errorf("config is nil")
+	}
+
 	proc.SetTimeToForceQuit(cfg.GracePeriod)
 	group = service.NewServiceGroup()
+	var initialized []service.Service
+	defer func() {
+		if err == nil {
+			return
+		}
+		for _, svc := range initialized {
+			svc.Stop()
+		}
+	}()
 
 	for i, cluster := range cfg.Clusters {
+		if cluster == nil {
+			return fmt.Errorf("cluster %d is nil", i)
+		}
+		if cluster.Input == nil {
+			return fmt.Errorf("cluster %d input is nil", i)
+		}
+
 		filters := filter.CreateFilters(cluster)
 
 		writers, err := output.NewWriters(cluster.Output)
@@ -34,14 +54,27 @@ func Init(cfg *config.StashConfig) error {
 		handle.AddWriters(writers...)
 
 		if cluster.Input.Kafka != nil {
-			for _, k := range input.ToKqConf(cluster.Input.Kafka) {
-				group.Add(kq.MustNewQueue(k, handle))
+			for j, k := range input.ToKqConf(cluster.Input.Kafka) {
+				queue, err := kq.NewQueue(k, handle)
+				if err != nil {
+					return fmt.Errorf("initialize cluster %d kafka queue %d: %w", i, j, err)
+				}
+				initialized = append(initialized, queue)
+				group.Add(queue)
 			}
 		}
 
 		if cluster.Input.Syslogs != nil {
-			for _, s := range cluster.Input.Syslogs {
-				group.Add(input.NewSyslogService(s, handle))
+			for j, s := range cluster.Input.Syslogs {
+				if s == nil {
+					return fmt.Errorf("cluster %d syslog input %d is nil", i, j)
+				}
+				syslogService, err := input.NewSyslogService(s, handle)
+				if err != nil {
+					return fmt.Errorf("initialize cluster %d syslog input %d: %w", i, j, err)
+				}
+				initialized = append(initialized, syslogService)
+				group.Add(syslogService)
 			}
 		}
 	}

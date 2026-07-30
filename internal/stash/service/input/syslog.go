@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"sync"
 
 	jsoniter "github.com/json-iterator/go"
 	log "github.com/sirupsen/logrus"
@@ -23,13 +24,15 @@ type (
 
 	SyslogService struct {
 		conf             *config.SyslogServiceConf
+		server           *syslog.Server
 		channel          handler.LogPartsChannel
 		handler          ConsumeHandler
 		consumerRoutines *threading.RoutineGroup
+		stopOnce         sync.Once
 	}
 )
 
-func NewSyslogService(c *config.SyslogServiceConf, cHandler ConsumeHandler) SyslogService {
+func NewSyslogService(c *config.SyslogServiceConf, cHandler ConsumeHandler) (*SyslogService, error) {
 	channel := make(handler.LogPartsChannel, 10000)
 	syslogHandler := handler.NewChannelHandler(channel)
 
@@ -40,16 +43,16 @@ func NewSyslogService(c *config.SyslogServiceConf, cHandler ConsumeHandler) Sysl
 	switch c.Protocol {
 	case "Udp":
 		if err := server.ListenUDP(fmt.Sprintf("%s:%d", c.Address, c.Port)); err != nil {
-			log.Errorf("Create UDP listen error:%v", err)
+			return nil, fmt.Errorf("create UDP listener: %w", err)
 		}
 	case "Tcp":
 		if c.Ssl == "on" {
 			if err := server.ListenTCPTLS(fmt.Sprintf("%s:%d", c.Address, c.Port), nil); err != nil {
-				log.Errorf("Create TCPTLS listen error:%v", err)
+				return nil, fmt.Errorf("create TCP TLS listener: %w", err)
 			}
 		} else {
 			if err := server.ListenTCP(fmt.Sprintf("%s:%d", c.Address, c.Port)); err != nil {
-				log.Errorf("Create TCP listen error:%v", err)
+				return nil, fmt.Errorf("create TCP listener: %w", err)
 			}
 		}
 	case "Unixgram":
@@ -57,23 +60,27 @@ func NewSyslogService(c *config.SyslogServiceConf, cHandler ConsumeHandler) Sysl
 		log.Infof("listen Unixgram on:%v", c.Address)
 
 		if err := server.ListenUnixgram(c.Address); err != nil {
-			log.Errorf("create unixgram listen error:%v", err)
+			return nil, fmt.Errorf("create unixgram listener: %w", err)
 		}
 	default:
-		log.Errorf("Unexpect syslog protocol:%v", c.Protocol)
+		return nil, fmt.Errorf("unexpected syslog protocol: %s", c.Protocol)
 	}
 
-	server.Boot()
+	if err := server.Boot(); err != nil {
+		_ = server.Kill()
+		return nil, fmt.Errorf("boot syslog server: %w", err)
+	}
 
-	return SyslogService{
+	return &SyslogService{
 		conf:             c,
+		server:           server,
 		channel:          channel,
 		handler:          cHandler,
 		consumerRoutines: threading.NewRoutineGroup(),
-	}
+	}, nil
 }
 
-func (s SyslogService) Start() {
+func (s *SyslogService) Start() {
 	for i := 0; i < s.conf.Processors; i++ {
 		s.consumerRoutines.Run(func() {
 			log.Infof("Start syslog process [%d]", i+1)
@@ -95,9 +102,18 @@ func (s SyslogService) Start() {
 	s.consumerRoutines.Wait()
 }
 
-func (s SyslogService) Stop() {
-	log.Infof("Stop syslog service...")
-	if s.conf.Protocol == "Unixgram" {
-		os.Remove(s.conf.Address)
-	}
+func (s *SyslogService) Stop() {
+	s.stopOnce.Do(func() {
+		log.Infof("Stop syslog service...")
+		if s.server != nil {
+			if err := s.server.Kill(); err != nil {
+				log.Warnf("Kill syslog server error:%v", err)
+			}
+			s.server.Wait()
+		}
+		close(s.channel)
+		if s.conf.Protocol == "Unixgram" {
+			os.Remove(s.conf.Address)
+		}
+	})
 }

@@ -3,9 +3,12 @@ package output
 import (
 	"BlackHole/internal/stash/service/filter"
 	"BlackHole/pkg/config"
+	"errors"
 	"fmt"
 	"log/syslog"
+	"strings"
 
+	jsoniter "github.com/json-iterator/go"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -15,6 +18,7 @@ type (
 		Address  string
 		Port     int
 		Columns  []string
+		logger   *syslog.Writer
 	}
 
 	SyslogWriter struct {
@@ -25,12 +29,28 @@ type (
 
 func NewSyslogWriter(c *config.SyslogOutputConf) (*SyslogWriter, error) {
 	w := &SyslogWriter{}
-	for _, cSyslogAddr := range c.SyslogAddrs {
+	if c == nil {
+		return w, nil
+	}
+
+	for i, cSyslogAddr := range c.SyslogAddrs {
+		if cSyslogAddr == nil {
+			return nil, fmt.Errorf("syslog address %d is nil", i)
+		}
+
+		protocol := normalizeSyslogNetwork(cSyslogAddr.Protocol)
+		address := syslogDialAddress(protocol, cSyslogAddr.Address, cSyslogAddr.Port)
+		logger, err := syslog.Dial(protocol, address, syslog.LOG_INFO|syslog.LOG_LOCAL0, "stash")
+		if err != nil {
+			return nil, fmt.Errorf("dial syslog %s %s: %w", protocol, address, err)
+		}
+
 		w.WriteConfs = append(w.WriteConfs, &SyslogWriteConf{
-			Protocol: cSyslogAddr.Protocol,
+			Protocol: protocol,
 			Address:  cSyslogAddr.Address,
 			Port:     cSyslogAddr.Port,
 			Columns:  cSyslogAddr.Columns,
+			logger:   logger,
 		})
 	}
 
@@ -74,42 +94,56 @@ func (w *SyslogWriter) Write(val map[string]interface{}) error {
 		return nil
 	}
 
+	var writeErr error
 	for _, wc := range w.WriteConfs {
 		if len(wc.Columns) == 0 {
 			continue
 		}
 
-		_val, err := w.PrepareData(wc.Columns, val)
+		prepared, err := w.PrepareData(wc.Columns, val)
 		if err != nil {
 			log.Warnf("PrepareData error:%v", err)
-			return nil
+			return err
 		}
 
-		var body string
-		for i, v := range _val {
-			if len(body) == 0 {
-				body = fmt.Sprintf("\"%v\":\"%v\"", wc.Columns[i], v)
-			} else {
-				body = body + "," + fmt.Sprintf("\"%v\":\"%v\"", wc.Columns[i], v)
-			}
+		body := make(map[string]interface{}, len(wc.Columns))
+		for i, v := range prepared {
+			body[wc.Columns[i]] = v
 		}
-		dataString := fmt.Sprintf("{%s}", body)
 
-		go func(address string, protocol string, port int, data string) {
-			// 创建一个 Syslog logger，使用 UDP 协议连接到本地 Syslog 服务器
-			logger, err := syslog.Dial(protocol, fmt.Sprintf("%s:%d", address, port), syslog.LOG_INFO|syslog.LOG_LOCAL0, "stash")
-			if err != nil {
-				log.Fatalf("Failed to dial syslog: %v", err)
-			}
-			defer logger.Close()
+		dataString, err := jsoniter.MarshalToString(body)
+		if err != nil {
+			log.Warnf("Marshal syslog output error:%v", err)
+			return err
+		}
 
-			// 发送一条 Syslog 消息
-			err = logger.Info(data)
-			if err != nil {
-				log.Fatalf("Failed to send syslog message: %v", err)
-			}
-		}(wc.Address, wc.Protocol, wc.Port, dataString)
+		err = wc.logger.Info(dataString)
+		if err != nil {
+			log.Warnf("Send syslog message error:%v", err)
+			writeErr = errors.Join(writeErr, err)
+		}
 	}
 
-	return nil
+	return writeErr
+}
+
+func normalizeSyslogNetwork(protocol string) string {
+	switch strings.ToLower(protocol) {
+	case "", "udp":
+		return "udp"
+	case "tcp":
+		return "tcp"
+	case "unix", "unixgram", "unixpacket":
+		return strings.ToLower(protocol)
+	default:
+		return strings.ToLower(protocol)
+	}
+}
+
+func syslogDialAddress(protocol, address string, port int) string {
+	if strings.HasPrefix(protocol, "unix") {
+		return address
+	}
+
+	return fmt.Sprintf("%s:%d", address, port)
 }

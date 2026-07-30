@@ -42,18 +42,25 @@ func Run(r Runner) error {
 			log.Info("Shutting down application")
 		}
 
-		if r.Shutdown != nil {
-			if r.ShutdownTimeout > 0 {
-				shutdownCtx, cancel := context.WithTimeout(context.Background(), r.ShutdownTimeout)
-				defer cancel()
+		shutdownCtx := context.Background()
+		var cancel context.CancelFunc
+		if r.ShutdownTimeout > 0 {
+			shutdownCtx, cancel = context.WithTimeout(context.Background(), r.ShutdownTimeout)
+			defer cancel()
+		}
 
-				if err := r.Shutdown(shutdownCtx); err != nil {
-					return err
-				}
-			} else {
-				if err := r.Shutdown(context.Background()); err != nil {
-					return err
-				}
+		if r.Shutdown != nil {
+			if err := r.Shutdown(shutdownCtx); err != nil {
+				return err
+			}
+		}
+
+		if r.ShutdownTimeout > 0 {
+			select {
+			case runErr := <-runDone:
+				return runErr
+			case <-shutdownCtx.Done():
+				return fmt.Errorf("shutdown %s: %w", r.Name, shutdownCtx.Err())
 			}
 		}
 
