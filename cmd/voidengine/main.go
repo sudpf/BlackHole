@@ -13,12 +13,11 @@ func main() {
 	configFile := flag.String("config-file", "voidengine.toml", "config file")
 	flag.Parse()
 
-	err := config.ParseVoidEngineConfig(*configFile)
+	cfg, err := config.LoadVoidEngineConfig(*configFile)
 	if err != nil {
 		log.WithError(err).Fatal("Parse config file error")
 	}
 
-	cfg := config.GetVoidEngineConfig()
 	logger.InitLog(cfg.LogLevel(), cfg.AppLogFile())
 
 	log.Info(cfg.String())

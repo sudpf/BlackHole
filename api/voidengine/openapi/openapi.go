@@ -16,44 +16,46 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var (
-	apiRouter *gin.Engine
-	apiRoutes = make(map[string][]router.Route)
-)
-
-func NewServer(address string) *http.Server {
-	return &http.Server{
-		Addr:    address,
-		Handler: apiRouter,
-	}
+type Server struct {
+	address string
+	router  *gin.Engine
+	routes  map[string][]router.Route
 }
 
-func InitApi(address string) {
+func NewHTTPServer(address, apiLogFile string) *Server {
 	gin.DefaultWriter = log.StandardLogger().Out
 	gin.DefaultErrorWriter = log.StandardLogger().Out
 
-	apiRouter = gin.New()
+	server := &Server{
+		address: address,
+		router:  gin.New(),
+		routes:  make(map[string][]router.Route),
+	}
 
 	env.SetupTranslations()
 	env.InitLocalizer(locales.EnTranslations, locales.ZhTranslations)
 
-	middleware.ApiLogMiddlewares(apiRouter)
+	middleware.ApiLogMiddlewares(server.router, apiLogFile)
 
-	apiRouter.NoRoute(func(c *gin.Context) {
+	server.router.NoRoute(func(c *gin.Context) {
 		e := env.NewEnv(c.GetHeader("Accept-Language"), c.ClientIP())
 		c.JSON(http.StatusNotFound, response.ApiNotFound.Tr(e))
 	})
 
-	swagger.SwaggerGenerator(apiRouter)
+	swagger.SwaggerGenerator(server.router)
 	voidengine.SwaggerInfo.Title = "VoidEngen"
 	voidengine.SwaggerInfo.Version = "v1"
 	voidengine.SwaggerInfo.Description = "API 文档"
 	voidengine.SwaggerInfo.Host = swaggerHost(address)
 	voidengine.SwaggerInfo.BasePath = "/"
-	apiRouter.Static("/voidengine", "docs/api/voidengine")
+	server.router.Static("/voidengine", "docs/api/voidengine")
 
-	for groupStr, routes := range apiRoutes {
-		group := apiRouter.Group(groupStr)
+	return server
+}
+
+func (s *Server) HTTPServer() *http.Server {
+	for groupStr, routes := range s.routes {
+		group := s.router.Group(groupStr)
 
 		for _, route := range routes {
 			switch route.Method() {
@@ -76,6 +78,11 @@ func InitApi(address string) {
 			}
 		}
 	}
+
+	return &http.Server{
+		Addr:    s.address,
+		Handler: s.router,
+	}
 }
 
 func swaggerHost(address string) string {
@@ -92,6 +99,6 @@ func swaggerHost(address string) string {
 	return net.JoinHostPort(host, port)
 }
 
-func RegisterRoutes(group string, routes []router.Route) {
-	apiRoutes[group] = append(apiRoutes[group], routes...)
+func (s *Server) RegisterRoutes(group string, routes []router.Route) {
+	s.routes[group] = append(s.routes[group], routes...)
 }

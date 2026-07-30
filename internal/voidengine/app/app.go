@@ -15,7 +15,7 @@ import (
 )
 
 func Run(cfg *config.VoidEngineConfig) (err error) {
-	models, err := model.New(cfg.Database)
+	models, err := model.New(cfg.Database, cfg.LogDir())
 	if err != nil {
 		return fmt.Errorf("initialize models: %w", err)
 	}
@@ -27,12 +27,11 @@ func Run(cfg *config.VoidEngineConfig) (err error) {
 
 	services := service.New(models)
 	handlers := v1handler.New(services)
-	v1router.RegisterRoutes(handlers)
 
 	listenAddress := cfg.ListenHTTP()
-	openapi.InitApi(listenAddress)
-
-	server := openapi.NewServer(listenAddress)
+	apiServer := openapi.NewHTTPServer(listenAddress, cfg.ApiLogFile())
+	v1router.RegisterRoutes(apiServer, handlers)
+	server := apiServer.HTTPServer()
 	if err := runtime.Run(runtime.Runner{
 		Name:            "VoidEngine",
 		ShutdownTimeout: cfg.ShutdownTimeout(),

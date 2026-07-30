@@ -13,19 +13,13 @@ import (
 )
 
 type VoidEngineConfig struct {
-	Title    string         `toml:"title" yaml:"title" json:"title,optional"`
-	App      appConfig      `toml:"app" yaml:"app" json:"app"`
-	Log      logConfig      `toml:"log" yaml:"log" json:"log"`
-	Database DatabaseConfig `toml:"database" yaml:"database" json:"database"`
+	Title      string         `toml:"title" yaml:"title" json:"title,optional"`
+	App        appConfig      `toml:"app" yaml:"app" json:"app"`
+	Log        logConfig      `toml:"log" yaml:"log" json:"log"`
+	Database   DatabaseConfig `toml:"database" yaml:"database" json:"database"`
+	appLogFile string
+	apiLogFile string
 }
-
-var (
-	GlobalVoidEngineConfig VoidEngineConfig
-	appVoidEngineName      string
-	appVoidEngineBaseDir   string
-	appVoidEngineLogFile   string
-	apiVoidEngineLogFile   string
-)
 
 func (c *VoidEngineConfig) String() string {
 	buf := new(bytes.Buffer)
@@ -37,11 +31,11 @@ func (c *VoidEngineConfig) String() string {
 }
 
 func (c *VoidEngineConfig) AppLogFile() string {
-	return appVoidEngineLogFile
+	return c.appLogFile
 }
 
 func (c *VoidEngineConfig) ApiLogFile() string {
-	return apiVoidEngineLogFile
+	return c.apiLogFile
 }
 
 func (c *VoidEngineConfig) LogLevel() string {
@@ -60,41 +54,34 @@ func (c *VoidEngineConfig) ShutdownTimeout() time.Duration {
 	return c.App.ShutdownTimeout
 }
 
-func GetVoidEngineConfig() *VoidEngineConfig {
-	return &GlobalVoidEngineConfig
-}
-
-func ParseVoidEngineConfig(file string) error {
-	// 获取当前执行文件的路径
+func LoadVoidEngineConfig(file string) (*VoidEngineConfig, error) {
 	appPath, err := os.Executable()
 	if err != nil {
-		return fmt.Errorf("get executable path: %w", err)
+		return nil, fmt.Errorf("get executable path: %w", err)
 	}
-	appVoidEngineName := filepath.Base(appPath)
+	appName := filepath.Base(appPath)
 
-	// 获取绝对路径
 	absPath, err := filepath.Abs(appPath)
 	if err != nil {
-		return fmt.Errorf("get absolute executable path: %w", err)
+		return nil, fmt.Errorf("get absolute executable path: %w", err)
 	}
-
-	// 获取目录路径
-	appVoidEngineBaseDir := filepath.Dir(absPath)
+	appBaseDir := filepath.Dir(absPath)
 
 	if !filepath.IsAbs(file) {
-		file = appVoidEngineBaseDir + "/../conf/" + file
+		file = filepath.Join(appBaseDir, "..", "conf", file)
 	}
 
-	if err := conf.Load(file, &GlobalVoidEngineConfig); err != nil {
-		return fmt.Errorf("load voidengine config: %w", err)
+	cfg := &VoidEngineConfig{}
+	if err := conf.Load(file, cfg); err != nil {
+		return nil, fmt.Errorf("load voidengine config: %w", err)
 	}
 
-	if !filepath.IsAbs(GlobalVoidEngineConfig.Log.Dir) {
-		GlobalVoidEngineConfig.Log.Dir = appVoidEngineBaseDir + "/../" + GlobalVoidEngineConfig.Log.Dir
+	if !filepath.IsAbs(cfg.Log.Dir) {
+		cfg.Log.Dir = filepath.Join(appBaseDir, "..", cfg.Log.Dir)
 	}
 
-	appVoidEngineLogFile = GlobalVoidEngineConfig.Log.Dir + "/" + appVoidEngineName + ".log"
-	apiVoidEngineLogFile = GlobalVoidEngineConfig.Log.Dir + "/" + "api.log"
+	cfg.appLogFile = filepath.Join(cfg.Log.Dir, appName+".log")
+	cfg.apiLogFile = filepath.Join(cfg.Log.Dir, "api.log")
 
-	return nil
+	return cfg, nil
 }

@@ -14,10 +14,10 @@ var configFile = flag.String("f", "stash.yaml", "Specify the config file")
 func main() {
 	flag.Parse()
 
-	if err := config.ParseStashConfig(*configFile); err != nil {
+	cfg, err := config.LoadStashConfig(*configFile)
+	if err != nil {
 		log.WithError(err).Fatal("Parse config file error")
 	}
-	cfg := config.GetStashConfig()
 
 	logger.InitLog(cfg.LogLevel(), cfg.AppLogFile())
 

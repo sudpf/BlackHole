@@ -1,9 +1,9 @@
 package db
 
 import (
-	"BlackHole/pkg/config"
 	"database/sql"
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	mysqlParser "github.com/go-sql-driver/mysql"
@@ -16,6 +16,7 @@ import (
 
 type MySQLDatabase struct {
 	debug   bool
+	logDir  string
 	logFile string
 	link    string
 	DB      *gorm.DB
@@ -26,7 +27,7 @@ func (m *MySQLDatabase) Connect(connectionString string) (*gorm.DB, error) {
 	if m.debug {
 		logger := logrus.New()
 		logger.SetOutput(&lumberjack.Logger{
-			Filename: config.GetVoidEngineConfig().LogDir() + "/" + m.logFile,
+			Filename: filepath.Join(m.logDir, m.logFile),
 			Compress: true,
 		})
 		logger.SetFormatter(&CustomFormatter{})
@@ -117,8 +118,8 @@ func (m *MySQLDatabase) Delete(model interface{}, conditions map[string]interfac
 	return m.DB.Where(conditions).Delete(model).Error
 }
 
-func NewMySQLDatabase(connectionString string, debug bool, logFile string) (*MySQLDatabase, error) {
-	db := &MySQLDatabase{debug: debug, logFile: logFile, link: connectionString}
+func NewMySQLDatabase(connectionString string, debug bool, logDir, logFile string) (*MySQLDatabase, error) {
+	db := &MySQLDatabase{debug: debug, logDir: logDir, logFile: logFile, link: connectionString}
 	if err := db.CreateDatabase(); err != nil {
 		log.Errorf("create database error: %v", err)
 		return nil, err

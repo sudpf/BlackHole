@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"BlackHole/pkg/config"
 	"fmt"
 
 	"github.com/gin-gonic/gin"
@@ -9,10 +8,10 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-func ApiLogMiddlewares(router *gin.Engine) {
+func ApiLogMiddlewares(router *gin.Engine, logFile string) {
 	var ginLog = logrus.New()
 	ginLog.SetOutput(&lumberjack.Logger{
-		Filename: config.GetVoidEngineConfig().ApiLogFile(),
+		Filename: logFile,
 		Compress: true,
 	})
 

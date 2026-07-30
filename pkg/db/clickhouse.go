@@ -1,8 +1,8 @@
 package db
 
 import (
-	"BlackHole/pkg/config"
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	clickhouseParser "github.com/ClickHouse/clickhouse-go/v2"
@@ -15,6 +15,7 @@ import (
 
 type ClickHouseDatabase struct {
 	debug   bool
+	logDir  string
 	logFile string
 	link    string
 	DB      *gorm.DB
@@ -25,7 +26,7 @@ func (c *ClickHouseDatabase) Connect(connectionString string) (*gorm.DB, error) 
 	if c.debug {
 		logger := logrus.New()
 		logger.SetOutput(&lumberjack.Logger{
-			Filename: config.GetVoidEngineConfig().LogDir() + "/" + c.logFile,
+			Filename: filepath.Join(c.logDir, c.logFile),
 			Compress: true,
 		})
 		logger.SetFormatter(&CustomFormatter{})
@@ -63,7 +64,7 @@ func (c *ClickHouseDatabase) CreateDatabase() error {
 	if c.debug {
 		logger := logrus.New()
 		logger.SetOutput(&lumberjack.Logger{
-			Filename: config.GetVoidEngineConfig().LogDir() + "/" + c.logFile,
+			Filename: filepath.Join(c.logDir, c.logFile),
 			Compress: true,
 		})
 		logger.SetFormatter(&CustomFormatter{})
@@ -151,8 +152,8 @@ func (c *ClickHouseDatabase) Delete(model interface{}, conditions map[string]int
 	return c.DB.Where(conditions).Delete(model).Error
 }
 
-func NewClickHouseDatabase(connectionString string, debug bool, logFile string) (*ClickHouseDatabase, error) {
-	db := &ClickHouseDatabase{debug: debug, logFile: logFile, link: connectionString}
+func NewClickHouseDatabase(connectionString string, debug bool, logDir, logFile string) (*ClickHouseDatabase, error) {
+	db := &ClickHouseDatabase{debug: debug, logDir: logDir, logFile: logFile, link: connectionString}
 
 	if err := db.CreateDatabase(); err != nil {
 		return nil, err

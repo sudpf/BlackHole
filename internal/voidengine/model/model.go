@@ -14,11 +14,11 @@ type Models struct {
 	closers []io.Closer
 }
 
-func New(databaseConfig config.DatabaseConfig) (*Models, error) {
+func New(databaseConfig config.DatabaseConfig, logDir string) (*Models, error) {
 	models := &Models{}
 
 	if databaseConfig.MySQL != nil {
-		mysqlDB, err := db.NewMySQLDatabase(databaseConfig.MySQL.Link, databaseConfig.MySQL.Debug, databaseConfig.MySQL.Log)
+		mysqlDB, err := db.NewMySQLDatabase(databaseConfig.MySQL.Link, databaseConfig.MySQL.Debug, logDir, databaseConfig.MySQL.Log)
 		if err != nil {
 			return nil, fmt.Errorf("initialize mysql: %w", err)
 		}
@@ -31,7 +31,7 @@ func New(databaseConfig config.DatabaseConfig) (*Models, error) {
 	}
 
 	if databaseConfig.ClickHouse != nil {
-		ckDB, err := db.NewClickHouseDatabase(databaseConfig.ClickHouse.Link, databaseConfig.ClickHouse.Debug, databaseConfig.ClickHouse.Log)
+		ckDB, err := db.NewClickHouseDatabase(databaseConfig.ClickHouse.Link, databaseConfig.ClickHouse.Debug, logDir, databaseConfig.ClickHouse.Log)
 		if err != nil {
 			_ = models.Close()
 			return nil, fmt.Errorf("initialize clickhouse: %w", err)

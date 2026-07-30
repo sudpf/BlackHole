@@ -14,19 +14,18 @@ import (
 	"github.com/zeromicro/go-zero/core/service"
 )
 
-var (
+type Stash struct {
 	group    *service.ServiceGroup
 	handlers []*handler.MessageHandler
-)
+}
 
-func Init(cfg *config.StashConfig) (err error) {
+func New(cfg *config.StashConfig) (_ *Stash, err error) {
 	if cfg == nil {
-		return fmt.Errorf("config is nil")
+		return nil, fmt.Errorf("config is nil")
 	}
 
 	proc.SetTimeToForceQuit(cfg.GracePeriod)
-	group = service.NewServiceGroup()
-	handlers = nil
+	stash := &Stash{group: service.NewServiceGroup()}
 	var initialized []service.Service
 	defer func() {
 		if err == nil {
@@ -35,78 +34,78 @@ func Init(cfg *config.StashConfig) (err error) {
 		for _, svc := range initialized {
 			svc.Stop()
 		}
-		for _, handle := range handlers {
+		for _, handle := range stash.handlers {
 			_ = handle.Close()
 		}
 	}()
 
 	for i, cluster := range cfg.Clusters {
 		if cluster == nil {
-			return fmt.Errorf("cluster %d is nil", i)
+			return nil, fmt.Errorf("cluster %d is nil", i)
 		}
 		if cluster.Input == nil {
-			return fmt.Errorf("cluster %d input is nil", i)
+			return nil, fmt.Errorf("cluster %d input is nil", i)
 		}
 
 		filters := filter.CreateFilters(cluster)
 
 		writers, err := output.NewWriters(cluster.Output)
 		if err != nil {
-			return fmt.Errorf("initialize cluster %d writers: %w", i, err)
+			return nil, fmt.Errorf("initialize cluster %d writers: %w", i, err)
 		}
 
 		handle := handler.NewHandler()
 		handle.AddFilters(filters...)
 		handle.AddWriters(writers...)
-		handlers = append(handlers, handle)
+		stash.handlers = append(stash.handlers, handle)
 
 		if cluster.Input.Kafka != nil {
 			for j, k := range input.ToKqConf(cluster.Input.Kafka) {
 				queue, err := kq.NewQueue(k, handle)
 				if err != nil {
-					return fmt.Errorf("initialize cluster %d kafka queue %d: %w", i, j, err)
+					return nil, fmt.Errorf("initialize cluster %d kafka queue %d: %w", i, j, err)
 				}
 				initialized = append(initialized, queue)
-				group.Add(queue)
+				stash.group.Add(queue)
 			}
 		}
 
 		if cluster.Input.Syslogs != nil {
 			for j, s := range cluster.Input.Syslogs {
 				if s == nil {
-					return fmt.Errorf("cluster %d syslog input %d is nil", i, j)
+					return nil, fmt.Errorf("cluster %d syslog input %d is nil", i, j)
 				}
 				syslogService, err := input.NewSyslogService(s, handle)
 				if err != nil {
-					return fmt.Errorf("initialize cluster %d syslog input %d: %w", i, j, err)
+					return nil, fmt.Errorf("initialize cluster %d syslog input %d: %w", i, j, err)
 				}
 				initialized = append(initialized, syslogService)
-				group.Add(syslogService)
+				stash.group.Add(syslogService)
 			}
 		}
 	}
 
-	return nil
+	return stash, nil
 }
 
-func Run() error {
-	if group == nil {
+func (s *Stash) Run() error {
+	if s == nil || s.group == nil {
 		return fmt.Errorf("service group not initialized")
 	}
 
-	group.Start()
+	s.group.Start()
 	return nil
 }
 
-func Stop() error {
-	if group == nil {
+func (s *Stash) Stop() error {
+	if s == nil || s.group == nil {
 		return nil
 	}
 
-	group.Stop()
+	s.group.Stop()
 
 	var err error
-	for _, handle := range handlers {
+	for _, handle := range s.handlers {
 		err = errors.Join(err, handle.Close())
 	}
 

@@ -9,20 +9,21 @@ import (
 )
 
 func Run(cfg *config.StashConfig) error {
-	if err := service.Init(cfg); err != nil {
+	stash, err := service.New(cfg)
+	if err != nil {
 		return fmt.Errorf("initialize service: %w", err)
 	}
 
 	if err := runtime.Run(runtime.Runner{
 		Name: "Stash",
 		Run: func() error {
-			if err := service.Run(); err != nil {
+			if err := stash.Run(); err != nil {
 				return fmt.Errorf("run service: %w", err)
 			}
 			return nil
 		},
 		Shutdown: func(context.Context) error {
-			if err := service.Stop(); err != nil {
+			if err := stash.Stop(); err != nil {
 				return fmt.Errorf("stop service: %w", err)
 			}
 			return nil

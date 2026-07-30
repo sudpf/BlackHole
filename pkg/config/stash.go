@@ -13,14 +13,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-var (
-	GlobalStashConfig StashConfig
-	appStashName      string
-	appStashBaseDir   string
-	appStashLogFile   string
-	apiStashLogFile   string
-)
-
 type (
 	ConditionConf struct {
 		Key   string `yaml:"key" json:"key"`
@@ -121,6 +113,8 @@ type (
 		Log         logConfig      `yaml:"log" json:"log"`
 		Clusters    []*ClusterConf `yaml:"clusters" json:"clusters"`
 		GracePeriod time.Duration  `yaml:"grace_period" json:"grace_period,default=10s"`
+		appLogFile  string
+		apiLogFile  string
 	}
 )
 
@@ -134,11 +128,11 @@ func (c *StashConfig) String() string {
 }
 
 func (c *StashConfig) AppLogFile() string {
-	return appStashLogFile
+	return c.appLogFile
 }
 
 func (c *StashConfig) ApiLogFile() string {
-	return apiStashLogFile
+	return c.apiLogFile
 }
 
 func (c *StashConfig) LogLevel() string {
@@ -149,41 +143,34 @@ func (c *StashConfig) LogDir() string {
 	return c.Log.Dir
 }
 
-func GetStashConfig() *StashConfig {
-	return &GlobalStashConfig
-}
-
-func ParseStashConfig(file string) error {
-	// 获取当前执行文件的路径
+func LoadStashConfig(file string) (*StashConfig, error) {
 	appPath, err := os.Executable()
 	if err != nil {
-		return fmt.Errorf("get executable path: %w", err)
+		return nil, fmt.Errorf("get executable path: %w", err)
 	}
-	appStashName = filepath.Base(appPath)
+	appName := filepath.Base(appPath)
 
-	// 获取绝对路径
 	absPath, err := filepath.Abs(appPath)
 	if err != nil {
-		return fmt.Errorf("get absolute executable path: %w", err)
+		return nil, fmt.Errorf("get absolute executable path: %w", err)
 	}
-
-	// 获取目录路径
-	appStashBaseDir := filepath.Dir(absPath)
+	appBaseDir := filepath.Dir(absPath)
 
 	if !filepath.IsAbs(file) {
-		file = appStashBaseDir + "/../conf/" + file
+		file = filepath.Join(appBaseDir, "..", "conf", file)
 	}
 
-	if err := conf.Load(file, &GlobalStashConfig); err != nil {
-		return fmt.Errorf("load stash config: %w", err)
+	cfg := &StashConfig{}
+	if err := conf.Load(file, cfg); err != nil {
+		return nil, fmt.Errorf("load stash config: %w", err)
 	}
 
-	if !filepath.IsAbs(GlobalStashConfig.Log.Dir) {
-		GlobalStashConfig.Log.Dir = appStashBaseDir + "/../" + GlobalStashConfig.Log.Dir
+	if !filepath.IsAbs(cfg.Log.Dir) {
+		cfg.Log.Dir = filepath.Join(appBaseDir, "..", cfg.Log.Dir)
 	}
 
-	appStashLogFile = GlobalStashConfig.Log.Dir + "/" + appStashName + ".log"
-	apiStashLogFile = GlobalStashConfig.Log.Dir + "/" + appStashName + "api.log"
+	cfg.appLogFile = filepath.Join(cfg.Log.Dir, appName+".log")
+	cfg.apiLogFile = filepath.Join(cfg.Log.Dir, appName+"api.log")
 
-	return nil
+	return cfg, nil
 }
