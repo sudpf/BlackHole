@@ -79,6 +79,7 @@ func NewClickHouseWriter(c *config.ClickHouseConf) (*ChWriter, error) {
 		log.Warnf("Init clickhouseColumns error: %v", err)
 		time.Sleep(time.Second * 5)
 	}
+	_ = client.Close()
 	return nil, fmt.Errorf("Init clickhouseColumns error")
 }
 
@@ -140,12 +141,22 @@ func (w *ChWriter) Write(val map[string]interface{}) error {
 	v, err := w.PrepareData(val)
 	if err != nil {
 		log.Warnf("PrepareData error:%v", err)
-		return nil
+		return err
 	}
 
 	return w.inserter.Add(ValueWithIndex{
 		val: v,
 	}, len(val))
+}
+
+func (w *ChWriter) Close() error {
+	if w == nil {
+		return nil
+	}
+
+	w.inserter.Flush()
+	w.inserter.Wait()
+	return w.client.Close()
 }
 
 func (w *ChWriter) PrepareData(val map[string]interface{}) ([]interface{}, error) {

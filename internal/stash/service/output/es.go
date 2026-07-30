@@ -3,6 +3,7 @@ package output
 import (
 	"BlackHole/pkg/config"
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/olivere/elastic/v7"
@@ -43,6 +44,7 @@ func NewElasticSearchWriter(c *config.ElasticSearchConf) (*EsWriter, error) {
 
 	version, err := client.ElasticsearchVersion(c.Hosts[0])
 	if err != nil {
+		client.Stop()
 		return nil, err
 	}
 
@@ -56,7 +58,10 @@ func NewElasticSearchWriter(c *config.ElasticSearchConf) (*EsWriter, error) {
 	var loc *time.Location
 	if len(c.TimeZone) > 0 {
 		loc, err = time.LoadLocation(c.TimeZone)
-		logx.Must(err)
+		if err != nil {
+			client.Stop()
+			return nil, fmt.Errorf("load Elasticsearch timezone %q: %w", c.TimeZone, err)
+		}
 	} else {
 		loc = time.Local
 	}
@@ -76,6 +81,17 @@ func (w *EsWriter) Write(val map[string]interface{}) error {
 		index: index,
 		val:   string(bs),
 	}, len(string(bs)))
+}
+
+func (w *EsWriter) Close() error {
+	if w == nil {
+		return nil
+	}
+
+	w.inserter.Flush()
+	w.inserter.Wait()
+	w.client.Stop()
+	return nil
 }
 
 func (w *EsWriter) execute(vals []interface{}) {

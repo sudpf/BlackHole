@@ -32,9 +32,13 @@ func NewSyslogWriter(c *config.SyslogOutputConf) (*SyslogWriter, error) {
 	if c == nil {
 		return w, nil
 	}
+	closeWriter := func() {
+		_ = w.Close()
+	}
 
 	for i, cSyslogAddr := range c.SyslogAddrs {
 		if cSyslogAddr == nil {
+			closeWriter()
 			return nil, fmt.Errorf("syslog address %d is nil", i)
 		}
 
@@ -42,6 +46,7 @@ func NewSyslogWriter(c *config.SyslogOutputConf) (*SyslogWriter, error) {
 		address := syslogDialAddress(protocol, cSyslogAddr.Address, cSyslogAddr.Port)
 		logger, err := syslog.Dial(protocol, address, syslog.LOG_INFO|syslog.LOG_LOCAL0, "stash")
 		if err != nil {
+			closeWriter()
 			return nil, fmt.Errorf("dial syslog %s %s: %w", protocol, address, err)
 		}
 
@@ -125,6 +130,17 @@ func (w *SyslogWriter) Write(val map[string]interface{}) error {
 	}
 
 	return writeErr
+}
+
+func (w *SyslogWriter) Close() error {
+	var err error
+	for _, writeConf := range w.WriteConfs {
+		if writeConf.logger != nil {
+			err = errors.Join(err, writeConf.logger.Close())
+		}
+	}
+
+	return err
 }
 
 func normalizeSyslogNetwork(protocol string) string {

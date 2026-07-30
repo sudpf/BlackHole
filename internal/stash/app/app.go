@@ -22,7 +22,9 @@ func Run(cfg *config.StashConfig) error {
 			return nil
 		},
 		Shutdown: func(context.Context) error {
-			service.Stop()
+			if err := service.Stop(); err != nil {
+				return fmt.Errorf("stop service: %w", err)
+			}
 			return nil
 		},
 	}); err != nil {

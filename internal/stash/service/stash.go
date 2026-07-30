@@ -6,6 +6,7 @@ import (
 	"BlackHole/internal/stash/service/input"
 	"BlackHole/internal/stash/service/output"
 	"BlackHole/pkg/config"
+	"errors"
 	"fmt"
 
 	"github.com/zeromicro/go-queue/kq"
@@ -14,7 +15,8 @@ import (
 )
 
 var (
-	group *service.ServiceGroup
+	group    *service.ServiceGroup
+	handlers []*handler.MessageHandler
 )
 
 func Init(cfg *config.StashConfig) (err error) {
@@ -24,6 +26,7 @@ func Init(cfg *config.StashConfig) (err error) {
 
 	proc.SetTimeToForceQuit(cfg.GracePeriod)
 	group = service.NewServiceGroup()
+	handlers = nil
 	var initialized []service.Service
 	defer func() {
 		if err == nil {
@@ -31,6 +34,9 @@ func Init(cfg *config.StashConfig) (err error) {
 		}
 		for _, svc := range initialized {
 			svc.Stop()
+		}
+		for _, handle := range handlers {
+			_ = handle.Close()
 		}
 	}()
 
@@ -52,6 +58,7 @@ func Init(cfg *config.StashConfig) (err error) {
 		handle := handler.NewHandler()
 		handle.AddFilters(filters...)
 		handle.AddWriters(writers...)
+		handlers = append(handlers, handle)
 
 		if cluster.Input.Kafka != nil {
 			for j, k := range input.ToKqConf(cluster.Input.Kafka) {
@@ -91,10 +98,17 @@ func Run() error {
 	return nil
 }
 
-func Stop() {
+func Stop() error {
 	if group == nil {
-		return
+		return nil
 	}
 
 	group.Stop()
+
+	var err error
+	for _, handle := range handlers {
+		err = errors.Join(err, handle.Close())
+	}
+
+	return err
 }

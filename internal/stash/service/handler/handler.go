@@ -4,6 +4,8 @@ import (
 	"BlackHole/internal/stash/service/filter"
 	"BlackHole/internal/stash/service/output"
 	"context"
+	"errors"
+	"fmt"
 
 	jsoniter "github.com/json-iterator/go"
 	log "github.com/sirupsen/logrus"
@@ -26,6 +28,14 @@ func (mh *MessageHandler) AddFilters(filters ...filter.FilterFunc) {
 	mh.filters = append(mh.filters, filters...)
 }
 
+func (mh *MessageHandler) Close() error {
+	if err := output.CloseWriters(mh.writers); err != nil {
+		return fmt.Errorf("close message writers: %w", err)
+	}
+
+	return nil
+}
+
 func (mh *MessageHandler) Consume(_ context.Context, _, val string) error {
 	var m map[string]interface{}
 	if err := jsoniter.Unmarshal([]byte(val), &m); err != nil {
@@ -38,11 +48,13 @@ func (mh *MessageHandler) Consume(_ context.Context, _, val string) error {
 		}
 	}
 
+	var writeErr error
 	for _, mWriter := range mh.writers {
 		if err := mWriter.Write(m); err != nil {
 			log.Warnf("write log error:%v", err)
+			writeErr = errors.Join(writeErr, err)
 		}
 	}
 
-	return nil
+	return writeErr
 }
