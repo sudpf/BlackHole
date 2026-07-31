@@ -19,74 +19,86 @@ import (
 	"golang.org/x/text/language"
 )
 
-var (
+type Provider struct {
 	localizerZh *i18n.Localizer
 	localizerEn *i18n.Localizer
 	uni         *ut.UniversalTranslator
-)
+}
 
-func SetupTranslations() error {
+func NewProvider(enMessages, zhMessages map[string]string) (*Provider, error) {
+	uni, err := setupTranslations()
+	if err != nil {
+		return nil, fmt.Errorf("setup translations: %w", err)
+	}
+
+	localizerEn, localizerZh, err := newLocalizers(enMessages, zhMessages)
+	if err != nil {
+		return nil, fmt.Errorf("initialize localizers: %w", err)
+	}
+
+	return &Provider{
+		localizerZh: localizerZh,
+		localizerEn: localizerEn,
+		uni:         uni,
+	}, nil
+}
+
+func setupTranslations() (*ut.UniversalTranslator, error) {
+	zhT := zh.New()
+	enT := en.New()
+	uni := ut.New(enT, zhT, enT)
+
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		v.RegisterTagNameFunc(func(fld reflect.StructField) string {
-			name := strings.SplitN(fld.Tag.Get("json"), ",", 2)[0]
+			name, _, _ := strings.Cut(fld.Tag.Get("json"), ",")
 			if name == "-" {
 				return ""
 			}
 			return name
 		})
 
-		zhT := zh.New()
-		enT := en.New()
-		uni = ut.New(enT, zhT, enT)
-
 		transEn, ok := uni.GetTranslator(constant.LangEnglish)
 		if !ok {
-			return fmt.Errorf("uni.GetTranslator(%s) failed", constant.LangEnglish)
+			return nil, fmt.Errorf("uni.GetTranslator(%s) failed", constant.LangEnglish)
 		}
 		if err := enTranslations.RegisterDefaultTranslations(v, transEn); err != nil {
-			return err
+			return nil, err
 		}
 
 		transZh, ok := uni.GetTranslator(constant.LangChinese)
 		if !ok {
-			return fmt.Errorf("uni.GetTranslator(%s) failed", constant.LangChinese)
+			return nil, fmt.Errorf("uni.GetTranslator(%s) failed", constant.LangChinese)
 		}
 		if err := zhTranslations.RegisterDefaultTranslations(v, transZh); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	// 注册自定义验证器和翻译器
-
-	return nil
+	return uni, nil
 }
 
-func InitLocalizer(enTranslations, zhTranslations map[string]string) error {
-	// 创建一个新的 i18n bundle
+func newLocalizers(enMessages, zhMessages map[string]string) (*i18n.Localizer, *i18n.Localizer, error) {
 	bundle := i18n.NewBundle(language.English)
 
-	// 加载翻译到 bundle 中
-	for id, translation := range enTranslations {
+	for id, translation := range enMessages {
 		if err := bundle.AddMessages(language.English, &i18n.Message{
 			ID:    id,
 			Other: translation,
 		}); err != nil {
-			return fmt.Errorf("add english message %q: %w", id, err)
+			return nil, nil, fmt.Errorf("add english message %q: %w", id, err)
 		}
 	}
 
-	for id, translation := range zhTranslations {
+	for id, translation := range zhMessages {
 		if err := bundle.AddMessages(language.Chinese, &i18n.Message{
 			ID:    id,
 			Other: translation,
 		}); err != nil {
-			return fmt.Errorf("add chinese message %q: %w", id, err)
+			return nil, nil, fmt.Errorf("add chinese message %q: %w", id, err)
 		}
 	}
 
-	localizerZh = i18n.NewLocalizer(bundle, "zh")
-	localizerEn = i18n.NewLocalizer(bundle, "en")
-	return nil
+	return i18n.NewLocalizer(bundle, "en"), i18n.NewLocalizer(bundle, "zh"), nil
 }
 
 type Env struct {
@@ -94,21 +106,28 @@ type Env struct {
 	ClientIp  string
 	RequestId string
 	Trans     ut.Translator
+
+	localizer *i18n.Localizer
 }
 
-func NewEnv(lang string, clientIp string) *Env {
-	trans, _ := uni.GetTranslator(lang)
+func (p *Provider) NewEnv(lang string, clientIp string) *Env {
+	trans, _ := p.uni.GetTranslator(lang)
 
-	return &Env{Lang: lang, ClientIp: clientIp, Trans: trans}
+	localizer := p.localizerEn
+	if lang == constant.LangChinese {
+		localizer = p.localizerZh
+	}
+
+	return &Env{Lang: lang, ClientIp: clientIp, Trans: trans, localizer: localizer}
 }
 
-func NewEnvFromContext(ctx context.Context) *Env {
+func (p *Provider) NewEnvFromContext(ctx context.Context) *Env {
 	lang := requestctx.Language(ctx)
 	if lang == "" {
 		lang = constant.LangEnglish
 	}
 
-	env := NewEnv(lang, requestctx.ClientIP(ctx))
+	env := p.NewEnv(lang, requestctx.ClientIP(ctx))
 	env.RequestId = requestctx.TraceID(ctx)
 	return env
 }
@@ -129,13 +148,7 @@ func (ev *Env) TranslatErrors(err error) map[string]string {
 }
 
 func (ev *Env) MustLocalize(message string) string {
-	if ev.Lang == constant.LangChinese {
-		return localizerZh.MustLocalize(&i18n.LocalizeConfig{
-			MessageID: message,
-		})
-	}
-
-	return localizerEn.MustLocalize(&i18n.LocalizeConfig{
+	return ev.localizer.MustLocalize(&i18n.LocalizeConfig{
 		MessageID: message,
 	})
 }

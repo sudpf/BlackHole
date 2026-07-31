@@ -5,6 +5,7 @@ import (
 	"BlackHole/api/middleware"
 	"BlackHole/api/router"
 	"BlackHole/api/swagger"
+	"BlackHole/api/wrapper"
 	"BlackHole/docs/api/voidengine"
 	"BlackHole/internal/voidengine/locales"
 	"BlackHole/pkg/env"
@@ -19,9 +20,10 @@ import (
 )
 
 type Server struct {
-	address string
-	router  *gin.Engine
-	routes  map[string][]router.Route
+	address     string
+	router      *gin.Engine
+	routes      map[string][]router.Route
+	envProvider *env.Provider
 }
 
 func NewHTTPServer(address, apiLogFile string, apiLogSize string, requestTimeout time.Duration) (*Server, error) {
@@ -29,17 +31,16 @@ func NewHTTPServer(address, apiLogFile string, apiLogSize string, requestTimeout
 	gin.DefaultWriter = log.StandardLogger().Out
 	gin.DefaultErrorWriter = log.StandardLogger().Out
 
-	server := &Server{
-		address: address,
-		router:  gin.New(),
-		routes:  make(map[string][]router.Route),
+	envProvider, err := env.NewProvider(locales.EnTranslations, locales.ZhTranslations)
+	if err != nil {
+		return nil, fmt.Errorf("initialize env provider: %w", err)
 	}
 
-	if err := env.SetupTranslations(); err != nil {
-		return nil, fmt.Errorf("setup translations: %w", err)
-	}
-	if err := env.InitLocalizer(locales.EnTranslations, locales.ZhTranslations); err != nil {
-		return nil, fmt.Errorf("initialize localizer: %w", err)
+	server := &Server{
+		address:     address,
+		router:      gin.New(),
+		routes:      make(map[string][]router.Route),
+		envProvider: envProvider,
 	}
 
 	server.router.Use(middleware.RequestContext(requestTimeout))
@@ -48,7 +49,7 @@ func NewHTTPServer(address, apiLogFile string, apiLogSize string, requestTimeout
 	}
 
 	server.router.NoRoute(func(c *gin.Context) {
-		e := env.NewEnvFromContext(c.Request.Context())
+		e := server.envProvider.NewEnvFromContext(c.Request.Context())
 		c.JSON(http.StatusNotFound, response.ApiNotFound.Tr(e))
 	})
 
@@ -111,4 +112,8 @@ func swaggerHost(address string) string {
 
 func (s *Server) RegisterRoutes(group string, routes []router.Route) {
 	s.routes[group] = append(s.routes[group], routes...)
+}
+
+func (s *Server) WrapEnv(handler wrapper.WrapperHandlerFunc) gin.HandlerFunc {
+	return wrapper.WrapperEnvFunc(s.envProvider, handler)
 }

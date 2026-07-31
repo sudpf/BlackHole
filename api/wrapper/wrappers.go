@@ -8,8 +8,8 @@ import (
 
 type WrapperHandlerFunc func(*gin.Context, *env.Env)
 
-func WrapperEnvFunc(handler WrapperHandlerFunc) func(*gin.Context) {
+func WrapperEnvFunc(provider *env.Provider, handler WrapperHandlerFunc) func(*gin.Context) {
 	return func(c *gin.Context) {
-		handler(c, env.NewEnvFromContext(c.Request.Context()))
+		handler(c, provider.NewEnvFromContext(c.Request.Context()))
 	}
 }
