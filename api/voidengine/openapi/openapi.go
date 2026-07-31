@@ -10,6 +10,7 @@ import (
 	"BlackHole/pkg/env"
 	"net"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -22,7 +23,8 @@ type Server struct {
 	routes  map[string][]router.Route
 }
 
-func NewHTTPServer(address, apiLogFile string) *Server {
+func NewHTTPServer(address, apiLogFile string, apiLogSize string, requestTimeout time.Duration) (*Server, error) {
+	gin.SetMode(gin.ReleaseMode)
 	gin.DefaultWriter = log.StandardLogger().Out
 	gin.DefaultErrorWriter = log.StandardLogger().Out
 
@@ -35,10 +37,13 @@ func NewHTTPServer(address, apiLogFile string) *Server {
 	env.SetupTranslations()
 	env.InitLocalizer(locales.EnTranslations, locales.ZhTranslations)
 
-	middleware.ApiLogMiddlewares(server.router, apiLogFile)
+	server.router.Use(middleware.RequestContext(requestTimeout))
+	if err := middleware.ApiLogMiddlewares(server.router, apiLogFile, apiLogSize); err != nil {
+		return nil, err
+	}
 
 	server.router.NoRoute(func(c *gin.Context) {
-		e := env.NewEnv(c.GetHeader("Accept-Language"), c.ClientIP())
+		e := env.NewEnvFromContext(c.Request.Context())
 		c.JSON(http.StatusNotFound, response.ApiNotFound.Tr(e))
 	})
 
@@ -50,7 +55,7 @@ func NewHTTPServer(address, apiLogFile string) *Server {
 	voidengine.SwaggerInfo.BasePath = "/"
 	server.router.Static("/voidengine", "docs/api/voidengine")
 
-	return server
+	return server, nil
 }
 
 func (s *Server) HTTPServer() *http.Server {

@@ -1,6 +1,8 @@
 package db
 
 import (
+	"BlackHole/pkg/logger"
+	"context"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -8,7 +10,6 @@ import (
 	clickhouseParser "github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
-	"gopkg.in/natefinch/lumberjack.v2"
 	clickhouse "gorm.io/driver/clickhouse"
 	"gorm.io/gorm"
 )
@@ -17,6 +18,7 @@ type ClickHouseDatabase struct {
 	debug   bool
 	logDir  string
 	logFile string
+	logSize string
 	link    string
 	DB      *gorm.DB
 }
@@ -24,14 +26,15 @@ type ClickHouseDatabase struct {
 func (c *ClickHouseDatabase) Connect(connectionString string) (*gorm.DB, error) {
 	var la *logrusAdapter
 	if c.debug {
-		logger := logrus.New()
-		logger.SetOutput(&lumberjack.Logger{
-			Filename: filepath.Join(c.logDir, c.logFile),
-			Compress: true,
-		})
-		logger.SetFormatter(&CustomFormatter{})
-		logger.SetLevel(logrus.DebugLevel)
-		la = NewLogrusAdapter(logger)
+		sqlLogger := logrus.New()
+		output, err := logger.RotatingWriter(filepath.Join(c.logDir, c.logFile), c.logSize)
+		if err != nil {
+			return nil, fmt.Errorf("initialize clickhouse sql log: %w", err)
+		}
+		sqlLogger.SetOutput(output)
+		sqlLogger.SetFormatter(&CustomFormatter{})
+		sqlLogger.SetLevel(logrus.DebugLevel)
+		la = NewLogrusAdapter(sqlLogger)
 	}
 
 	db, err := gorm.Open(clickhouse.Open(connectionString), &gorm.Config{Logger: la})
@@ -62,14 +65,15 @@ func (c *ClickHouseDatabase) CreateTable(model ...interface{}) error {
 func (c *ClickHouseDatabase) CreateDatabase() error {
 	var la *logrusAdapter
 	if c.debug {
-		logger := logrus.New()
-		logger.SetOutput(&lumberjack.Logger{
-			Filename: filepath.Join(c.logDir, c.logFile),
-			Compress: true,
-		})
-		logger.SetFormatter(&CustomFormatter{})
-		logger.SetLevel(logrus.DebugLevel)
-		la = NewLogrusAdapter(logger)
+		sqlLogger := logrus.New()
+		output, err := logger.RotatingWriter(filepath.Join(c.logDir, c.logFile), c.logSize)
+		if err != nil {
+			return fmt.Errorf("initialize clickhouse sql log: %w", err)
+		}
+		sqlLogger.SetOutput(output)
+		sqlLogger.SetFormatter(&CustomFormatter{})
+		sqlLogger.SetLevel(logrus.DebugLevel)
+		la = NewLogrusAdapter(sqlLogger)
 	}
 
 	// 解析 DSN
@@ -102,7 +106,7 @@ func (c *ClickHouseDatabase) CreateDatabase() error {
 	return nil
 }
 
-func (c *ClickHouseDatabase) Query(model interface{}, conditions map[string]interface{}) (*gorm.DB, error) {
+func (c *ClickHouseDatabase) Query(ctx context.Context, model interface{}, conditions map[string]interface{}) (*gorm.DB, error) {
 	pageNo, okPageNo := conditions["PageNo"].(int)
 	pageSize, okPageSize := conditions["PageSize"].(int)
 	order, okOrder := conditions["OrderBy"].(string)
@@ -111,7 +115,7 @@ func (c *ClickHouseDatabase) Query(model interface{}, conditions map[string]inte
 	delete(conditions, "PageSize")
 	delete(conditions, "OrderBy")
 
-	db := c.DB.Where(conditions)
+	db := c.DB.WithContext(ctx).Where(conditions)
 	if okPageNo && okPageSize {
 		db = db.Offset((pageNo - 1) * pageSize).Limit(pageSize)
 		//fmt.Printf("%d %d", pageNo, pageSize)
@@ -130,30 +134,30 @@ func (c *ClickHouseDatabase) Query(model interface{}, conditions map[string]inte
 	return db, db.Error
 }
 
-func (c *ClickHouseDatabase) QueryEx(model interface{}, conditions interface{}) (*gorm.DB, error) {
+func (c *ClickHouseDatabase) QueryEx(ctx context.Context, model interface{}, conditions interface{}) (*gorm.DB, error) {
 	conditionMap, err := StructToConditions(conditions)
 	if err != nil {
 		return nil, err
 	}
 
-	query := c.DB.Where(conditionMap).Find(model)
+	query := c.DB.WithContext(ctx).Where(conditionMap).Find(model)
 	return query, query.Error
 }
 
-func (c *ClickHouseDatabase) Insert(model interface{}) error {
-	return c.DB.Create(model).Error
+func (c *ClickHouseDatabase) Insert(ctx context.Context, model interface{}) error {
+	return c.DB.WithContext(ctx).Create(model).Error
 }
 
-func (c *ClickHouseDatabase) Update(model interface{}, conditions map[string]interface{}) error {
-	return c.DB.Model(model).Where(conditions).Updates(model).Error
+func (c *ClickHouseDatabase) Update(ctx context.Context, model interface{}, conditions map[string]interface{}) error {
+	return c.DB.WithContext(ctx).Model(model).Where(conditions).Updates(model).Error
 }
 
-func (c *ClickHouseDatabase) Delete(model interface{}, conditions map[string]interface{}) error {
-	return c.DB.Where(conditions).Delete(model).Error
+func (c *ClickHouseDatabase) Delete(ctx context.Context, model interface{}, conditions map[string]interface{}) error {
+	return c.DB.WithContext(ctx).Where(conditions).Delete(model).Error
 }
 
-func NewClickHouseDatabase(connectionString string, debug bool, logDir, logFile string) (*ClickHouseDatabase, error) {
-	db := &ClickHouseDatabase{debug: debug, logDir: logDir, logFile: logFile, link: connectionString}
+func NewClickHouseDatabase(connectionString string, debug bool, logDir, logFile, logSize string) (*ClickHouseDatabase, error) {
+	db := &ClickHouseDatabase{debug: debug, logDir: logDir, logFile: logFile, logSize: logSize, link: connectionString}
 
 	if err := db.CreateDatabase(); err != nil {
 		return nil, err

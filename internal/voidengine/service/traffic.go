@@ -1,13 +1,16 @@
 package service
 
-import "BlackHole/internal/voidengine/model"
+import (
+	"BlackHole/internal/voidengine/model"
+	"context"
+)
 
 type TrafficService struct {
 	dao TrafficDataAccess
 }
 
 type TrafficDataAccess interface {
-	List(query model.TrafficQuery) ([]model.NetworkTraffic, error)
+	List(ctx context.Context, query model.TrafficQuery) ([]model.NetworkTraffic, error)
 }
 
 type TrafficListOptions struct {
@@ -20,12 +23,12 @@ func NewTrafficService(dao TrafficDataAccess) *TrafficService {
 	return &TrafficService{dao: dao}
 }
 
-func (s *TrafficService) List(options TrafficListOptions) ([]model.NetworkTraffic, error) {
+func (s *TrafficService) List(ctx context.Context, options TrafficListOptions) ([]model.NetworkTraffic, error) {
 	if s.dao == nil {
 		return nil, NewError(ErrorCodeDependencyUnavailable)
 	}
 
-	return s.dao.List(model.TrafficQuery{
+	return s.dao.List(ctx, model.TrafficQuery{
 		PageNo:   options.PageNo,
 		PageSize: options.PageSize,
 		OrderBy:  options.OrderBy,

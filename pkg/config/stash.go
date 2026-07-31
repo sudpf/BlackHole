@@ -139,6 +139,10 @@ func (c *StashConfig) LogLevel() string {
 	return c.Log.Level
 }
 
+func (c *StashConfig) LogSize() string {
+	return c.Log.Size
+}
+
 func (c *StashConfig) LogDir() string {
 	return c.Log.Dir
 }

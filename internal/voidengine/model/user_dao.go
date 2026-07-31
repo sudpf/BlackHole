@@ -1,6 +1,7 @@
 package model
 
 import (
+	"context"
 	"errors"
 
 	"gorm.io/gorm"
@@ -21,8 +22,8 @@ func NewUserDAO(db *gorm.DB) *UserDAO {
 	return &UserDAO{db: db}
 }
 
-func (d *UserDAO) List(query UserQuery) ([]User, error) {
-	database := d.db
+func (d *UserDAO) List(ctx context.Context, query UserQuery) ([]User, error) {
+	database := d.db.WithContext(ctx)
 	if query.Username != nil {
 		database = database.Where("name = ?", *query.Username)
 	}
@@ -44,13 +45,13 @@ func (d *UserDAO) List(query UserQuery) ([]User, error) {
 	return users, nil
 }
 
-func (d *UserDAO) Create(user *User) error {
-	return d.db.Create(user).Error
+func (d *UserDAO) Create(ctx context.Context, user *User) error {
+	return d.db.WithContext(ctx).Create(user).Error
 }
 
-func (d *UserDAO) FindByName(username string) (*User, error) {
+func (d *UserDAO) FindByName(ctx context.Context, username string) (*User, error) {
 	var user User
-	err := d.db.Where("name = ?", username).First(&user).Error
+	err := d.db.WithContext(ctx).Where("name = ?", username).First(&user).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
 	}
@@ -60,10 +61,10 @@ func (d *UserDAO) FindByName(username string) (*User, error) {
 	return &user, nil
 }
 
-func (d *UserDAO) Update(username string, user *User) error {
-	return d.db.Model(user).Where("name = ?", username).Updates(user).Error
+func (d *UserDAO) Update(ctx context.Context, username string, user *User) error {
+	return d.db.WithContext(ctx).Model(user).Where("name = ?", username).Updates(user).Error
 }
 
-func (d *UserDAO) DeleteByName(username string) error {
-	return d.db.Where("name = ?", username).Delete(&User{}).Error
+func (d *UserDAO) DeleteByName(ctx context.Context, username string) error {
+	return d.db.WithContext(ctx).Where("name = ?", username).Delete(&User{}).Error
 }

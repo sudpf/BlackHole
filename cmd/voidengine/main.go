@@ -18,7 +18,9 @@ func main() {
 		log.WithError(err).Fatal("Parse config file error")
 	}
 
-	logger.InitLog(cfg.LogLevel(), cfg.AppLogFile())
+	if err := logger.InitLog(cfg.LogLevel(), cfg.AppLogFile(), cfg.LogSize()); err != nil {
+		log.WithError(err).Fatal("Init log error")
+	}
 
 	log.Info(cfg.String())
 

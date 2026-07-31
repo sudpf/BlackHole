@@ -1,9 +1,13 @@
 package db
 
 import (
+	"BlackHole/pkg/logger"
+	"context"
 	"database/sql"
+	"fmt"
 	"os"
 
+	"github.com/sirupsen/logrus"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -11,12 +15,28 @@ import (
 type SQLiteDatabase struct {
 	logLevel string
 	logFile  string
+	logSize  string
 	link     string
 	DB       *gorm.DB
 }
 
 func (s *SQLiteDatabase) Connect(connectionString string) (*gorm.DB, error) {
-	db, err := gorm.Open(sqlite.Open(connectionString), &gorm.Config{})
+	var la *logrusAdapter
+	if s.logFile != "" {
+		sqlLogger := logrus.New()
+		output, err := logger.RotatingWriter(s.logFile, s.logSize)
+		if err != nil {
+			return nil, fmt.Errorf("initialize sqlite sql log: %w", err)
+		}
+		sqlLogger.SetOutput(output)
+		sqlLogger.SetFormatter(&CustomFormatter{})
+		if level, err := logrus.ParseLevel(s.logLevel); err == nil {
+			sqlLogger.SetLevel(level)
+		}
+		la = NewLogrusAdapter(sqlLogger)
+	}
+
+	db, err := gorm.Open(sqlite.Open(connectionString), &gorm.Config{Logger: la})
 	if err != nil {
 		return nil, err
 	}
@@ -54,35 +74,35 @@ func (s *SQLiteDatabase) CreateDatabase() error {
 	return nil
 }
 
-func (s *SQLiteDatabase) Query(model interface{}, conditions map[string]interface{}) (*gorm.DB, error) {
-	query := s.DB.Where(conditions).Find(model)
+func (s *SQLiteDatabase) Query(ctx context.Context, model interface{}, conditions map[string]interface{}) (*gorm.DB, error) {
+	query := s.DB.WithContext(ctx).Where(conditions).Find(model)
 	return query, query.Error
 }
 
-func (s *SQLiteDatabase) QueryEx(model interface{}, conditions interface{}) (*gorm.DB, error) {
+func (s *SQLiteDatabase) QueryEx(ctx context.Context, model interface{}, conditions interface{}) (*gorm.DB, error) {
 	conditionMap, err := StructToConditions(conditions)
 	if err != nil {
 		return nil, err
 	}
 
-	query := s.DB.Where(conditionMap).Find(model)
+	query := s.DB.WithContext(ctx).Where(conditionMap).Find(model)
 	return query, query.Error
 }
 
-func (s *SQLiteDatabase) Insert(model interface{}) error {
-	return s.DB.Create(model).Error
+func (s *SQLiteDatabase) Insert(ctx context.Context, model interface{}) error {
+	return s.DB.WithContext(ctx).Create(model).Error
 }
 
-func (s *SQLiteDatabase) Update(model interface{}, conditions map[string]interface{}) error {
-	return s.DB.Model(model).Where(conditions).Updates(model).Error
+func (s *SQLiteDatabase) Update(ctx context.Context, model interface{}, conditions map[string]interface{}) error {
+	return s.DB.WithContext(ctx).Model(model).Where(conditions).Updates(model).Error
 }
 
-func (s *SQLiteDatabase) Delete(model interface{}, conditions map[string]interface{}) error {
-	return s.DB.Where(conditions).Delete(model).Error
+func (s *SQLiteDatabase) Delete(ctx context.Context, model interface{}, conditions map[string]interface{}) error {
+	return s.DB.WithContext(ctx).Where(conditions).Delete(model).Error
 }
 
-func NewSQLiteDatabase(connectionString string, logLevel string, logFile string) (*SQLiteDatabase, error) {
-	db := &SQLiteDatabase{logLevel: logLevel, logFile: logFile, link: connectionString}
+func NewSQLiteDatabase(connectionString string, logLevel string, logFile string, logSize string) (*SQLiteDatabase, error) {
+	db := &SQLiteDatabase{logLevel: logLevel, logFile: logFile, logSize: logSize, link: connectionString}
 	sqliteDb, err := db.Connect(connectionString)
 	if err != nil {
 		return nil, err

@@ -5,6 +5,7 @@ import "time"
 type appConfig struct {
 	ListenHttp      string        `toml:"listen_http" yaml:"listen_http" json:"listen_http,default=127.0.0.1:80"`
 	ListenHttps     string        `toml:"listen_https" yaml:"listen_https" json:"listen_https,optional"`
+	RequestTimeout  time.Duration `toml:"request_timeout" yaml:"request_timeout" json:"request_timeout,default=30s"`
 	ShutdownTimeout time.Duration `toml:"shutdown_timeout" yaml:"shutdown_timeout" json:"shutdown_timeout,default=10s"`
 }
 

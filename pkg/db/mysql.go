@@ -1,6 +1,8 @@
 package db
 
 import (
+	"BlackHole/pkg/logger"
+	"context"
 	"database/sql"
 	"fmt"
 	"path/filepath"
@@ -9,7 +11,6 @@ import (
 	mysqlParser "github.com/go-sql-driver/mysql"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
-	"gopkg.in/natefinch/lumberjack.v2"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -18,6 +19,7 @@ type MySQLDatabase struct {
 	debug   bool
 	logDir  string
 	logFile string
+	logSize string
 	link    string
 	DB      *gorm.DB
 }
@@ -25,13 +27,14 @@ type MySQLDatabase struct {
 func (m *MySQLDatabase) Connect(connectionString string) (*gorm.DB, error) {
 	var la *logrusAdapter
 	if m.debug {
-		logger := logrus.New()
-		logger.SetOutput(&lumberjack.Logger{
-			Filename: filepath.Join(m.logDir, m.logFile),
-			Compress: true,
-		})
-		logger.SetFormatter(&CustomFormatter{})
-		la = NewLogrusAdapter(logger)
+		sqlLogger := logrus.New()
+		output, err := logger.RotatingWriter(filepath.Join(m.logDir, m.logFile), m.logSize)
+		if err != nil {
+			return nil, fmt.Errorf("initialize mysql sql log: %w", err)
+		}
+		sqlLogger.SetOutput(output)
+		sqlLogger.SetFormatter(&CustomFormatter{})
+		la = NewLogrusAdapter(sqlLogger)
 	}
 
 	db, err := gorm.Open(mysql.Open(connectionString), &gorm.Config{Logger: la})
@@ -74,7 +77,7 @@ func (m *MySQLDatabase) CreateDatabase() error {
 	return err
 }
 
-func (m *MySQLDatabase) Query(model interface{}, conditions map[string]interface{}) (*gorm.DB, error) {
+func (m *MySQLDatabase) Query(ctx context.Context, model interface{}, conditions map[string]interface{}) (*gorm.DB, error) {
 	pageNo, okPageNo := conditions["PageNo"].(int)
 	pageSize, okPageSize := conditions["PageSize"].(int)
 	order, okOrder := conditions["OrderBy"].(string)
@@ -83,7 +86,7 @@ func (m *MySQLDatabase) Query(model interface{}, conditions map[string]interface
 	delete(conditions, "PageSize")
 	delete(conditions, "OrderBy")
 
-	db := m.DB.Where(conditions)
+	db := m.DB.WithContext(ctx).Where(conditions)
 	if okPageNo && okPageSize {
 		db = db.Offset((pageNo - 1) * pageSize).Limit(pageSize)
 	}
@@ -101,25 +104,25 @@ func (m *MySQLDatabase) Query(model interface{}, conditions map[string]interface
 	return db, db.Error
 }
 
-func (m *MySQLDatabase) QueryEx(model interface{}, conditions interface{}) (*gorm.DB, error) {
-	query := m.DB.Where(conditions).Find(model)
+func (m *MySQLDatabase) QueryEx(ctx context.Context, model interface{}, conditions interface{}) (*gorm.DB, error) {
+	query := m.DB.WithContext(ctx).Where(conditions).Find(model)
 	return query, query.Error
 }
 
-func (m *MySQLDatabase) Insert(model interface{}) error {
-	return m.DB.Create(model).Error
+func (m *MySQLDatabase) Insert(ctx context.Context, model interface{}) error {
+	return m.DB.WithContext(ctx).Create(model).Error
 }
 
-func (m *MySQLDatabase) Update(model interface{}, conditions map[string]interface{}) error {
-	return m.DB.Model(model).Where(conditions).Updates(model).Error
+func (m *MySQLDatabase) Update(ctx context.Context, model interface{}, conditions map[string]interface{}) error {
+	return m.DB.WithContext(ctx).Model(model).Where(conditions).Updates(model).Error
 }
 
-func (m *MySQLDatabase) Delete(model interface{}, conditions map[string]interface{}) error {
-	return m.DB.Where(conditions).Delete(model).Error
+func (m *MySQLDatabase) Delete(ctx context.Context, model interface{}, conditions map[string]interface{}) error {
+	return m.DB.WithContext(ctx).Where(conditions).Delete(model).Error
 }
 
-func NewMySQLDatabase(connectionString string, debug bool, logDir, logFile string) (*MySQLDatabase, error) {
-	db := &MySQLDatabase{debug: debug, logDir: logDir, logFile: logFile, link: connectionString}
+func NewMySQLDatabase(connectionString string, debug bool, logDir, logFile, logSize string) (*MySQLDatabase, error) {
+	db := &MySQLDatabase{debug: debug, logDir: logDir, logFile: logFile, logSize: logSize, link: connectionString}
 	if err := db.CreateDatabase(); err != nil {
 		log.Errorf("create database error: %v", err)
 		return nil, err

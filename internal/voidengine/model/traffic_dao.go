@@ -1,6 +1,10 @@
 package model
 
-import "gorm.io/gorm"
+import (
+	"context"
+
+	"gorm.io/gorm"
+)
 
 type TrafficQuery struct {
 	PageNo   int
@@ -16,8 +20,8 @@ func NewTrafficDAO(db *gorm.DB) *TrafficDAO {
 	return &TrafficDAO{db: db}
 }
 
-func (d *TrafficDAO) List(query TrafficQuery) ([]NetworkTraffic, error) {
-	database := d.db
+func (d *TrafficDAO) List(ctx context.Context, query TrafficQuery) ([]NetworkTraffic, error) {
+	database := d.db.WithContext(ctx)
 	if query.PageNo > 0 && query.PageSize > 0 {
 		database = database.Offset((query.PageNo - 1) * query.PageSize).Limit(query.PageSize)
 	}

@@ -2,6 +2,8 @@ package env
 
 import (
 	"BlackHole/pkg/constant"
+	"BlackHole/pkg/requestctx"
+	"context"
 	"fmt"
 	"reflect"
 	"strings"
@@ -93,6 +95,17 @@ func NewEnv(lang string, clientIp string) *Env {
 	trans, _ := uni.GetTranslator(lang)
 
 	return &Env{Lang: lang, ClientIp: clientIp, Trans: trans}
+}
+
+func NewEnvFromContext(ctx context.Context) *Env {
+	lang := requestctx.Language(ctx)
+	if lang == "" {
+		lang = constant.LangEnglish
+	}
+
+	env := NewEnv(lang, requestctx.ClientIP(ctx))
+	env.RequestId = requestctx.TraceID(ctx)
+	return env
 }
 
 func removeTopStruct(fields map[string]string) map[string]string {

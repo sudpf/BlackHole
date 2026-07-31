@@ -42,12 +42,20 @@ func (c *VoidEngineConfig) LogLevel() string {
 	return c.Log.Level
 }
 
+func (c *VoidEngineConfig) LogSize() string {
+	return c.Log.Size
+}
+
 func (c *VoidEngineConfig) LogDir() string {
 	return c.Log.Dir
 }
 
 func (c *VoidEngineConfig) ListenHTTP() string {
 	return c.App.ListenHttp
+}
+
+func (c *VoidEngineConfig) RequestTimeout() time.Duration {
+	return c.App.RequestTimeout
 }
 
 func (c *VoidEngineConfig) ShutdownTimeout() time.Duration {

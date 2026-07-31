@@ -1,10 +1,13 @@
 package db
 
 import (
+	"BlackHole/pkg/logger"
+	"context"
 	"database/sql"
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/sirupsen/logrus"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -12,12 +15,28 @@ import (
 type PostgreSQLDatabase struct {
 	logLevel string
 	logFile  string
+	logSize  string
 	link     string
 	DB       *gorm.DB
 }
 
 func (p *PostgreSQLDatabase) Connect(connectionString string) (*gorm.DB, error) {
-	db, err := gorm.Open(postgres.Open(connectionString), &gorm.Config{})
+	var la *logrusAdapter
+	if p.logFile != "" {
+		sqlLogger := logrus.New()
+		output, err := logger.RotatingWriter(p.logFile, p.logSize)
+		if err != nil {
+			return nil, fmt.Errorf("initialize postgres sql log: %w", err)
+		}
+		sqlLogger.SetOutput(output)
+		sqlLogger.SetFormatter(&CustomFormatter{})
+		if level, err := logrus.ParseLevel(p.logLevel); err == nil {
+			sqlLogger.SetLevel(level)
+		}
+		la = NewLogrusAdapter(sqlLogger)
+	}
+
+	db, err := gorm.Open(postgres.Open(connectionString), &gorm.Config{Logger: la})
 	if err != nil {
 		return nil, err
 	}
@@ -62,35 +81,35 @@ func (p *PostgreSQLDatabase) CreateDatabase() error {
 	return err
 }
 
-func (p *PostgreSQLDatabase) Query(model interface{}, conditions map[string]interface{}) (*gorm.DB, error) {
-	query := p.DB.Where(conditions).Find(model)
+func (p *PostgreSQLDatabase) Query(ctx context.Context, model interface{}, conditions map[string]interface{}) (*gorm.DB, error) {
+	query := p.DB.WithContext(ctx).Where(conditions).Find(model)
 	return query, query.Error
 }
 
-func (p *PostgreSQLDatabase) QueryEx(model interface{}, conditions interface{}) (*gorm.DB, error) {
+func (p *PostgreSQLDatabase) QueryEx(ctx context.Context, model interface{}, conditions interface{}) (*gorm.DB, error) {
 	conditionMap, err := StructToConditions(conditions)
 	if err != nil {
 		return nil, err
 	}
 
-	query := p.DB.Where(conditionMap).Find(model)
+	query := p.DB.WithContext(ctx).Where(conditionMap).Find(model)
 	return query, query.Error
 }
 
-func (p *PostgreSQLDatabase) Insert(model interface{}) error {
-	return p.DB.Create(model).Error
+func (p *PostgreSQLDatabase) Insert(ctx context.Context, model interface{}) error {
+	return p.DB.WithContext(ctx).Create(model).Error
 }
 
-func (p *PostgreSQLDatabase) Update(model interface{}, conditions map[string]interface{}) error {
-	return p.DB.Model(model).Where(conditions).Updates(model).Error
+func (p *PostgreSQLDatabase) Update(ctx context.Context, model interface{}, conditions map[string]interface{}) error {
+	return p.DB.WithContext(ctx).Model(model).Where(conditions).Updates(model).Error
 }
 
-func (p *PostgreSQLDatabase) Delete(model interface{}, conditions map[string]interface{}) error {
-	return p.DB.Where(conditions).Delete(model).Error
+func (p *PostgreSQLDatabase) Delete(ctx context.Context, model interface{}, conditions map[string]interface{}) error {
+	return p.DB.WithContext(ctx).Where(conditions).Delete(model).Error
 }
 
-func NewPostgreSQLDatabase(connectionString string, logLevel string, logFile string) (*PostgreSQLDatabase, error) {
-	db := &PostgreSQLDatabase{logLevel: logLevel, logFile: logFile, link: connectionString}
+func NewPostgreSQLDatabase(connectionString string, logLevel string, logFile string, logSize string) (*PostgreSQLDatabase, error) {
+	db := &PostgreSQLDatabase{logLevel: logLevel, logFile: logFile, logSize: logSize, link: connectionString}
 
 	pgDb, err := db.Connect(connectionString)
 	if err != nil {

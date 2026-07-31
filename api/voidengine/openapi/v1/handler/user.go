@@ -5,10 +5,10 @@ import (
 	"BlackHole/api/voidengine/openapi/v1/message"
 	"BlackHole/internal/voidengine/service"
 	"BlackHole/pkg/env"
+	"BlackHole/pkg/logger"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
 )
 
 // ListUser
@@ -22,13 +22,14 @@ import (
 // @Failure 400 {object} response.ApiResponse
 // @Router /v1/user [get]
 func (h *Handler) ListUser(c *gin.Context, e *env.Env) {
+	ctx := c.Request.Context()
 	var request message.ListUserRequest
 	if err := c.ShouldBindQuery(&request); err != nil {
 		c.JSON(http.StatusBadRequest, response.InvalidParams.Tr(e).WithData(e.TranslatErrors(err)))
 		return
 	}
 
-	users, err := h.services.User.List(service.UserListOptions{
+	users, err := h.services.User.List(ctx, service.UserListOptions{
 		PageNo:   request.PageNo,
 		PageSize: request.PageSize,
 		OrderBy:  request.OrderBy,
@@ -53,13 +54,14 @@ func (h *Handler) ListUser(c *gin.Context, e *env.Env) {
 // @Failure 400 {object} response.ApiResponse
 // @Router /v1/user [post]
 func (h *Handler) AddUser(c *gin.Context, e *env.Env) {
+	ctx := c.Request.Context()
 	var request message.AddUserRequest
 	if err := c.ShouldBind(&request); err != nil {
 		c.JSON(http.StatusBadRequest, response.InvalidParams.Tr(e).WithData(e.TranslatErrors(err)))
 		return
 	}
 
-	if err := h.services.User.Add(service.AddUserInput{
+	if err := h.services.User.Add(ctx, service.AddUserInput{
 		Username: request.Username,
 		Password: request.Password,
 		Email:    request.Email,
@@ -83,13 +85,14 @@ func (h *Handler) AddUser(c *gin.Context, e *env.Env) {
 // @Failure 400 {object} response.ApiResponse
 // @Router /v1/user [put]
 func (h *Handler) ModifyUser(c *gin.Context, e *env.Env) {
+	ctx := c.Request.Context()
 	var request message.ModifyUserRequest
 	if err := c.ShouldBind(&request); err != nil {
 		c.JSON(http.StatusBadRequest, response.InvalidParams.Tr(e).WithData(e.TranslatErrors(err)))
 		return
 	}
 
-	if err := h.services.User.Modify(service.ModifyUserInput{
+	if err := h.services.User.Modify(ctx, service.ModifyUserInput{
 		Username: request.Username,
 		Password: request.Password,
 		Email:    request.Email,
@@ -113,13 +116,14 @@ func (h *Handler) ModifyUser(c *gin.Context, e *env.Env) {
 // @Failure 400 {object} response.ApiResponse
 // @Router /v1/user [delete]
 func (h *Handler) DeleteUser(c *gin.Context, e *env.Env) {
+	ctx := c.Request.Context()
 	var request message.DeleteUserRequest
 	if err := c.ShouldBind(&request); err != nil {
 		c.JSON(http.StatusBadRequest, response.InvalidParams.Tr(e).WithData(e.TranslatErrors(err)))
 		return
 	}
 
-	if err := h.services.User.Delete(request.Username); err != nil {
+	if err := h.services.User.Delete(ctx, request.Username); err != nil {
 		respondUserServiceError(c, e, err)
 		return
 	}
@@ -133,6 +137,6 @@ func respondUserServiceError(c *gin.Context, e *env.Env, err error) {
 		return
 	}
 
-	log.WithError(err).Error("Handle user request")
+	logger.FromContext(c.Request.Context()).WithError(err).Error("Handle user request")
 	c.JSON(http.StatusInternalServerError, response.SystemError.Tr(e))
 }

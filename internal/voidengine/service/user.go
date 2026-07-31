@@ -1,17 +1,20 @@
 package service
 
-import "BlackHole/internal/voidengine/model"
+import (
+	"BlackHole/internal/voidengine/model"
+	"context"
+)
 
 type UserService struct {
 	dao UserDataAccess
 }
 
 type UserDataAccess interface {
-	List(query model.UserQuery) ([]model.User, error)
-	Create(user *model.User) error
-	FindByName(username string) (*model.User, error)
-	Update(username string, user *model.User) error
-	DeleteByName(username string) error
+	List(ctx context.Context, query model.UserQuery) ([]model.User, error)
+	Create(ctx context.Context, user *model.User) error
+	FindByName(ctx context.Context, username string) (*model.User, error)
+	Update(ctx context.Context, username string, user *model.User) error
+	DeleteByName(ctx context.Context, username string) error
 }
 
 type UserListOptions struct {
@@ -39,12 +42,12 @@ func NewUserService(dao UserDataAccess) *UserService {
 	return &UserService{dao: dao}
 }
 
-func (s *UserService) List(options UserListOptions) ([]model.User, error) {
+func (s *UserService) List(ctx context.Context, options UserListOptions) ([]model.User, error) {
 	if s.dao == nil {
 		return nil, NewError(ErrorCodeDependencyUnavailable)
 	}
 
-	return s.dao.List(model.UserQuery{
+	return s.dao.List(ctx, model.UserQuery{
 		PageNo:   options.PageNo,
 		PageSize: options.PageSize,
 		OrderBy:  options.OrderBy,
@@ -52,12 +55,12 @@ func (s *UserService) List(options UserListOptions) ([]model.User, error) {
 	})
 }
 
-func (s *UserService) Add(input AddUserInput) error {
+func (s *UserService) Add(ctx context.Context, input AddUserInput) error {
 	if s.dao == nil {
 		return NewError(ErrorCodeDependencyUnavailable)
 	}
 
-	return s.dao.Create(&model.User{
+	return s.dao.Create(ctx, &model.User{
 		Name:     input.Username,
 		Password: input.Password,
 		Email:    input.Email,
@@ -65,12 +68,12 @@ func (s *UserService) Add(input AddUserInput) error {
 	})
 }
 
-func (s *UserService) Modify(input ModifyUserInput) error {
+func (s *UserService) Modify(ctx context.Context, input ModifyUserInput) error {
 	if s.dao == nil {
 		return NewError(ErrorCodeDependencyUnavailable)
 	}
 
-	user, err := s.dao.FindByName(input.Username)
+	user, err := s.dao.FindByName(ctx, input.Username)
 	if err != nil {
 		return err
 	}
@@ -88,13 +91,13 @@ func (s *UserService) Modify(input ModifyUserInput) error {
 		user.Phone = *input.Phone
 	}
 
-	return s.dao.Update(input.Username, user)
+	return s.dao.Update(ctx, input.Username, user)
 }
 
-func (s *UserService) Delete(username string) error {
+func (s *UserService) Delete(ctx context.Context, username string) error {
 	if s.dao == nil {
 		return NewError(ErrorCodeDependencyUnavailable)
 	}
 
-	return s.dao.DeleteByName(username)
+	return s.dao.DeleteByName(ctx, username)
 }
