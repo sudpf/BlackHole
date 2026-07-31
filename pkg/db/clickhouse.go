@@ -37,7 +37,12 @@ func (c *ClickHouseDatabase) Connect(connectionString string) (*gorm.DB, error) 
 		la = NewLogrusAdapter(sqlLogger)
 	}
 
-	db, err := gorm.Open(clickhouse.Open(connectionString), &gorm.Config{Logger: la})
+	cfg := &gorm.Config{}
+	if la != nil {
+		cfg.Logger = la
+	}
+
+	db, err := gorm.Open(clickhouse.Open(connectionString), cfg)
 	if err != nil {
 		log.Info(err)
 		return nil, err
@@ -88,7 +93,12 @@ func (c *ClickHouseDatabase) CreateDatabase() error {
 
 	dsn := fmt.Sprintf("tcp://%s?username=%s&password=%s&read_timeout=10s",
 		connParams.Addr[0], connParams.Auth.Username, connParams.Auth.Password)
-	db, err := gorm.Open(clickhouse.Open(dsn), &gorm.Config{Logger: la})
+	cfg := &gorm.Config{}
+	if la != nil {
+		cfg.Logger = la
+	}
+
+	db, err := gorm.Open(clickhouse.Open(dsn), cfg)
 	if err != nil {
 		return fmt.Errorf("connect clickhouse admin: %w", err)
 	}

@@ -8,6 +8,7 @@ import (
 	"BlackHole/docs/api/voidengine"
 	"BlackHole/internal/voidengine/locales"
 	"BlackHole/pkg/env"
+	"fmt"
 	"net"
 	"net/http"
 	"time"
@@ -34,8 +35,12 @@ func NewHTTPServer(address, apiLogFile string, apiLogSize string, requestTimeout
 		routes:  make(map[string][]router.Route),
 	}
 
-	env.SetupTranslations()
-	env.InitLocalizer(locales.EnTranslations, locales.ZhTranslations)
+	if err := env.SetupTranslations(); err != nil {
+		return nil, fmt.Errorf("setup translations: %w", err)
+	}
+	if err := env.InitLocalizer(locales.EnTranslations, locales.ZhTranslations); err != nil {
+		return nil, fmt.Errorf("initialize localizer: %w", err)
+	}
 
 	server.router.Use(middleware.RequestContext(requestTimeout))
 	if err := middleware.ApiLogMiddlewares(server.router, apiLogFile, apiLogSize); err != nil {

@@ -11,6 +11,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type requestContextTestKey struct{}
+
 func TestRequestContextDetachesClientCancellation(t *testing.T) {
 	traceID := "4bf92f3577b34da6a3ce929d0e0e4736"
 	gin.SetMode(gin.TestMode)
@@ -20,6 +22,9 @@ func TestRequestContextDetachesClientCancellation(t *testing.T) {
 		ctx := c.Request.Context()
 		if err := ctx.Err(); err != nil {
 			t.Errorf("work context was canceled: %v", err)
+		}
+		if got := ctx.Value(requestContextTestKey{}); got != "upstream" {
+			t.Errorf("upstream context value = %v, want upstream", got)
 		}
 		if got := requestctx.TraceID(ctx); got != traceID {
 			t.Errorf("trace ID = %q, want %s", got, traceID)
@@ -33,6 +38,7 @@ func TestRequestContextDetachesClientCancellation(t *testing.T) {
 	})
 
 	clientCtx, cancel := context.WithCancel(context.Background())
+	clientCtx = context.WithValue(clientCtx, requestContextTestKey{}, "upstream")
 	cancel()
 	request := httptest.NewRequest(http.MethodGet, "/", nil).WithContext(clientCtx)
 	request.Header.Set(requestctx.HeaderTraceID, traceID)

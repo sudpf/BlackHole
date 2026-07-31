@@ -49,15 +49,15 @@ func ClientIP(ctx context.Context) string {
 	return scope.ClientIP
 }
 
-func ResolveTraceID(value string) string {
+func ResolveTraceID(value string) (string, error) {
 	value = strings.TrimSpace(value)
 	if _, err := trace.TraceIDFromHex(value); err == nil {
-		return value
+		return value, nil
 	}
 
 	traceID := trace.TraceID{}
 	if _, err := rand.Read(traceID[:]); err != nil {
-		panic("generate trace id: " + err.Error())
+		return "", err
 	}
-	return traceID.String()
+	return traceID.String(), nil
 }

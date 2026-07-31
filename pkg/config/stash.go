@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/service"
 	"gopkg.in/yaml.v2"
@@ -121,7 +120,7 @@ type (
 func (c *StashConfig) String() string {
 	buf := new(bytes.Buffer)
 	if err := yaml.NewEncoder(buf).Encode(c); err != nil {
-		log.Fatal(err)
+		return fmt.Sprintf("encode stash config: %v", err)
 	}
 
 	return buf.String()

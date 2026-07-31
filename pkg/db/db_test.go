@@ -12,13 +12,14 @@ import (
 )
 
 func TestLogrusAdapterIncludesTraceID(t *testing.T) {
+	traceID := "4bf92f3577b34da6a3ce929d0e0e4736"
 	var output bytes.Buffer
 	logger := logrus.New()
 	logger.SetOutput(&output)
 	logger.SetFormatter(&CustomFormatter{})
 	adapter := NewLogrusAdapter(logger)
 
-	ctx := requestctx.WithScope(context.Background(), requestctx.Scope{TraceID: "trace-123"})
+	ctx := requestctx.WithScope(context.Background(), requestctx.Scope{TraceID: traceID})
 	adapter.Trace(ctx, time.Now(), func() (string, int64) {
 		return "SELECT 1", 1
 	}, nil)
@@ -27,8 +28,8 @@ func TestLogrusAdapterIncludesTraceID(t *testing.T) {
 	if err := json.Unmarshal(output.Bytes(), &fields); err != nil {
 		t.Fatalf("unmarshal log: %v: %s", err, output.String())
 	}
-	if fields["trace_id"] != "trace-123" {
-		t.Fatalf("trace_id = %v, want trace-123", fields["trace_id"])
+	if fields["trace_id"] != traceID {
+		t.Fatalf("trace_id = %v, want %s", fields["trace_id"], traceID)
 	}
 	if _, ok := fields["db"]; ok {
 		t.Fatalf("db should not be present: %v", fields)

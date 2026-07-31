@@ -37,7 +37,12 @@ func (m *MySQLDatabase) Connect(connectionString string) (*gorm.DB, error) {
 		la = NewLogrusAdapter(sqlLogger)
 	}
 
-	db, err := gorm.Open(mysql.Open(connectionString), &gorm.Config{Logger: la})
+	cfg := &gorm.Config{}
+	if la != nil {
+		cfg.Logger = la
+	}
+
+	db, err := gorm.Open(mysql.Open(connectionString), cfg)
 	if err != nil {
 		return nil, err
 	}

@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
-	log "github.com/sirupsen/logrus"
 	"github.com/zeromicro/go-zero/core/conf"
 )
 
@@ -24,7 +23,7 @@ type VoidEngineConfig struct {
 func (c *VoidEngineConfig) String() string {
 	buf := new(bytes.Buffer)
 	if err := toml.NewEncoder(buf).Encode(c); err != nil {
-		log.Fatal(err)
+		return fmt.Sprintf("encode voidengine config: %v", err)
 	}
 
 	return buf.String()

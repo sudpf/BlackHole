@@ -61,27 +61,32 @@ func SetupTranslations() error {
 	return nil
 }
 
-func InitLocalizer(enTranslations, zhTranslations map[string]string) {
+func InitLocalizer(enTranslations, zhTranslations map[string]string) error {
 	// 创建一个新的 i18n bundle
 	bundle := i18n.NewBundle(language.English)
 
 	// 加载翻译到 bundle 中
 	for id, translation := range enTranslations {
-		bundle.AddMessages(language.English, &i18n.Message{
+		if err := bundle.AddMessages(language.English, &i18n.Message{
 			ID:    id,
 			Other: translation,
-		})
+		}); err != nil {
+			return fmt.Errorf("add english message %q: %w", id, err)
+		}
 	}
 
 	for id, translation := range zhTranslations {
-		bundle.AddMessages(language.Chinese, &i18n.Message{
+		if err := bundle.AddMessages(language.Chinese, &i18n.Message{
 			ID:    id,
 			Other: translation,
-		})
+		}); err != nil {
+			return fmt.Errorf("add chinese message %q: %w", id, err)
+		}
 	}
 
 	localizerZh = i18n.NewLocalizer(bundle, "zh")
 	localizerEn = i18n.NewLocalizer(bundle, "en")
+	return nil
 }
 
 type Env struct {

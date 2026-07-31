@@ -77,7 +77,9 @@ func FromContext(ctx context.Context) *log.Entry {
 }
 
 func RotatingWriter(filename string, size string) (io.Writer, error) {
-	prepareLogFile(filename)
+	if err := prepareLogFile(filename); err != nil {
+		return nil, err
+	}
 	bytes, err := units.ParseByteSize(size)
 	if err != nil {
 		return nil, err
@@ -93,24 +95,23 @@ func RotatingWriter(filename string, size string) (io.Writer, error) {
 	}, nil
 }
 
-func prepareLogFile(filename string) {
+func prepareLogFile(filename string) error {
 	if filename == "" || filename == "stdout" || filename == "stderr" {
-		return
+		return nil
 	}
 
 	if err := os.MkdirAll(filepath.Dir(filename), 0755); err != nil {
-		fmt.Fprintf(os.Stderr, "create log dir: %v\n", err)
-		return
+		return fmt.Errorf("create log dir: %w", err)
 	}
 	file, err := os.OpenFile(filename, os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "open log file: %v\n", err)
-		return
+		return fmt.Errorf("open log file: %w", err)
 	}
 	if err := file.Close(); err != nil {
-		fmt.Fprintf(os.Stderr, "close log file: %v\n", err)
+		return fmt.Errorf("close log file: %w", err)
 	}
 	if err := os.Chmod(filename, 0644); err != nil {
-		fmt.Fprintf(os.Stderr, "chmod log file: %v\n", err)
+		return fmt.Errorf("chmod log file: %w", err)
 	}
+	return nil
 }

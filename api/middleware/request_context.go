@@ -2,8 +2,10 @@ package middleware
 
 import (
 	"BlackHole/pkg/constant"
+	"BlackHole/pkg/logger"
 	"BlackHole/pkg/requestctx"
 	"context"
+	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -20,8 +22,14 @@ func RequestContext(timeout time.Duration) gin.HandlerFunc {
 			language = constant.LangEnglish
 		}
 
-		traceID := requestctx.ResolveTraceID(c.GetHeader(requestctx.HeaderTraceID))
-		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+		traceID, err := requestctx.ResolveTraceID(c.GetHeader(requestctx.HeaderTraceID))
+		if err != nil {
+			logger.FromContext(c.Request.Context()).WithError(err).Error("generate trace id")
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(context.WithoutCancel(c.Request.Context()), timeout)
 		defer cancel()
 
 		ctx = requestctx.WithScope(ctx, requestctx.Scope{

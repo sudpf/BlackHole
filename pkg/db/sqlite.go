@@ -36,7 +36,12 @@ func (s *SQLiteDatabase) Connect(connectionString string) (*gorm.DB, error) {
 		la = NewLogrusAdapter(sqlLogger)
 	}
 
-	db, err := gorm.Open(sqlite.Open(connectionString), &gorm.Config{Logger: la})
+	cfg := &gorm.Config{}
+	if la != nil {
+		cfg.Logger = la
+	}
+
+	db, err := gorm.Open(sqlite.Open(connectionString), cfg)
 	if err != nil {
 		return nil, err
 	}
