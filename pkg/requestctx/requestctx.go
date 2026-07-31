@@ -2,9 +2,10 @@ package requestctx
 
 import (
 	"context"
+	"crypto/rand"
 	"strings"
 
-	"github.com/google/uuid"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const HeaderTraceID = "X-Trace-ID"
@@ -50,27 +51,13 @@ func ClientIP(ctx context.Context) string {
 
 func ResolveTraceID(value string) string {
 	value = strings.TrimSpace(value)
-	if validTraceID(value) {
+	if _, err := trace.TraceIDFromHex(value); err == nil {
 		return value
 	}
 
-	return uuid.NewString()
-}
-
-func validTraceID(value string) bool {
-	if len(value) == 0 || len(value) > 64 {
-		return false
+	traceID := trace.TraceID{}
+	if _, err := rand.Read(traceID[:]); err != nil {
+		panic("generate trace id: " + err.Error())
 	}
-
-	for _, char := range value {
-		if (char >= 'a' && char <= 'z') ||
-			(char >= 'A' && char <= 'Z') ||
-			(char >= '0' && char <= '9') ||
-			char == '-' || char == '_' || char == '.' {
-			continue
-		}
-		return false
-	}
-
-	return true
+	return traceID.String()
 }

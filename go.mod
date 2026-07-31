@@ -28,6 +28,7 @@ require (
 	github.com/vjeantet/jodaTime v1.0.0
 	github.com/zeromicro/go-queue v1.2.2
 	github.com/zeromicro/go-zero v1.7.2
+	go.opentelemetry.io/otel/trace v1.26.0
 	golang.org/x/text v0.17.0
 	gopkg.in/mcuadros/go-syslog.v2 v2.3.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
@@ -108,7 +109,6 @@ require (
 	go.opentelemetry.io/otel/exporters/zipkin v1.24.0 // indirect
 	go.opentelemetry.io/otel/metric v1.26.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.24.0 // indirect
-	go.opentelemetry.io/otel/trace v1.26.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.3.1 // indirect
 	go.uber.org/automaxprocs v1.5.3 // indirect
 	golang.org/x/arch v0.8.0 // indirect

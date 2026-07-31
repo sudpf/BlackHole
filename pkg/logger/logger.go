@@ -8,7 +8,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strconv"
 
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -113,24 +112,5 @@ func prepareLogFile(filename string) {
 	}
 	if err := os.Chmod(filename, 0644); err != nil {
 		fmt.Fprintf(os.Stderr, "chmod log file: %v\n", err)
-	}
-	chownToSudoUser(filename)
-}
-
-func chownToSudoUser(filename string) {
-	if os.Geteuid() != 0 {
-		return
-	}
-
-	uid, err := strconv.Atoi(os.Getenv("SUDO_UID"))
-	if err != nil {
-		return
-	}
-	gid, err := strconv.Atoi(os.Getenv("SUDO_GID"))
-	if err != nil {
-		return
-	}
-	if err := os.Chown(filename, uid, gid); err != nil {
-		fmt.Fprintf(os.Stderr, "chown log file: %v\n", err)
 	}
 }
