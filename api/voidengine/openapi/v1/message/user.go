@@ -1,8 +1,18 @@
 package message
 
+import "strings"
+
 type ListUserRequest struct {
 	ListQueryBase
-	Username *string `form:"username" json:"username" binding:"max=32"` // 用户名
+	Username *string `form:"username" json:"username" binding:"omitempty,max=32"` // 用户名
+}
+
+func (r *ListUserRequest) UsernameFilter() *string {
+	if r.Username == nil || strings.TrimSpace(*r.Username) == "" {
+		return nil
+	}
+
+	return r.Username
 }
 
 type ListUserResponse struct {

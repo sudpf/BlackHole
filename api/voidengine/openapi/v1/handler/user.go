@@ -32,7 +32,7 @@ func (h *Handler) ListUser(c *gin.Context, e *env.Env) {
 		PageNo:   request.PageNo,
 		PageSize: request.PageSize,
 		OrderBy:  request.OrderBy,
-		Username: request.Username,
+		Username: request.UsernameFilter(),
 	})
 	if err != nil {
 		respondUserServiceError(c, e, err)
