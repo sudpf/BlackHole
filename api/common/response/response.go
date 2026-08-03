@@ -1,36 +1,50 @@
 package response
 
-import "BlackHole/pkg/env"
+import (
+	"BlackHole/pkg/apperror"
+	"fmt"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+)
 
 type ApiResponse struct {
-	Code    int         `json:"code"`
-	Message string      `json:"message"`
-	Data    interface{} `json:"data,omitempty"`
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+	Data    any    `json:"data,omitempty"`
+	Details any    `json:"details,omitempty"`
 }
 
-func NewResponse(code int, message string) *ApiResponse {
-	return &ApiResponse{Code: code, Message: message}
+type Result struct {
+	Status int
+	Data   any
 }
 
-func (r *ApiResponse) Tr(ev *env.Env) *ApiResponse {
-	return &ApiResponse{Code: r.Code, Message: ev.MustLocalize(r.Message), Data: r.Data}
+func OK(data any) Result {
+	return Result{Status: http.StatusOK, Data: data}
 }
 
-func (r *ApiResponse) WithData(data interface{}) *ApiResponse {
-	return &ApiResponse{Code: r.Code, Message: r.Message, Data: data}
+func Created(data any) Result {
+	return Result{Status: http.StatusCreated, Data: data}
 }
 
-/*
- * 0 - 10000 保留给通用的错误码
- * 每个模块同样保留100个错误码
- */
-var (
-	ApiSuccess    = &ApiResponse{Code: 0, Message: "Success"}
-	ApiNotFound   = &ApiResponse{Code: 1, Message: "Api not found"}
-	InvalidParams = &ApiResponse{Code: 2, Message: "Invalid params"}
-	SystemError   = &ApiResponse{Code: 3, Message: "System error"}
+func WriteSuccess(c *gin.Context, message string, result Result) error {
+	if result.Status < 200 || result.Status > 299 {
+		return fmt.Errorf("invalid success HTTP status %d", result.Status)
+	}
 
-	InvalidUserName = &ApiResponse{Code: 100001, Message: "Invalid UserName"}
-	UserNotExist    = &ApiResponse{Code: 100002, Message: "User not exist"}
-	UserErrorEnd    = &ApiResponse{Code: 100100, Message: "User Error end"}
-)
+	c.JSON(result.Status, ApiResponse{
+		Code:    int(apperror.Success),
+		Message: message,
+		Data:    result.Data,
+	})
+	return nil
+}
+
+func WriteError(c *gin.Context, status int, code apperror.Code, message string, details any) {
+	c.JSON(status, ApiResponse{
+		Code:    int(code),
+		Message: message,
+		Details: details,
+	})
+}

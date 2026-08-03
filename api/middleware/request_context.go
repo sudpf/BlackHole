@@ -2,10 +2,9 @@ package middleware
 
 import (
 	"BlackHole/pkg/constant"
-	"BlackHole/pkg/logger"
 	"BlackHole/pkg/requestctx"
 	"context"
-	"net/http"
+	"fmt"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -24,8 +23,8 @@ func RequestContext(timeout time.Duration) gin.HandlerFunc {
 
 		traceID, err := requestctx.ResolveTraceID(c.GetHeader(requestctx.HeaderTraceID))
 		if err != nil {
-			logger.FromContext(c.Request.Context()).WithError(err).Error("generate trace id")
-			c.AbortWithStatus(http.StatusInternalServerError)
+			_ = c.Error(fmt.Errorf("generate trace id: %w", err))
+			c.Abort()
 			return
 		}
 

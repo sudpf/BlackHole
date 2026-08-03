@@ -105,7 +105,7 @@
                         "maximum": 100,
                         "minimum": 1,
                         "type": "integer",
-                        "example": 20,
+                        "example": 50,
                         "description": "每页数量",
                         "name": "pageSize",
                         "in": "query"
@@ -167,7 +167,7 @@
                         "maximum": 100,
                         "minimum": 1,
                         "type": "integer",
-                        "example": 20,
+                        "example": 50,
                         "description": "每页数量",
                         "name": "pageSize",
                         "in": "query"
@@ -420,6 +420,7 @@
                     "type": "integer"
                 },
                 "data": {},
+                "details": {},
                 "message": {
                     "type": "string"
                 }

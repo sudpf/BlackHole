@@ -8,6 +8,6 @@ import (
 
 func registerTrafficRoutes(server *openapi.Server, h *handler.Handler) {
 	server.RegisterRoutes("v1", []router.Route{
-		router.NewGetRoute("/traffic", server.WrapEnv(h.ListNetworkTraffic)),
+		router.NewGetRoute("/traffic", server.Wrap(h.ListNetworkTraffic)),
 	})
 }

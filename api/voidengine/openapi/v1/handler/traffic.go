@@ -3,10 +3,9 @@ package handler
 import (
 	"BlackHole/api/common/response"
 	"BlackHole/api/voidengine/openapi/v1/message"
+	"BlackHole/internal/voidengine/errorcode"
 	"BlackHole/internal/voidengine/service"
-	"BlackHole/pkg/env"
-	"BlackHole/pkg/logger"
-	"net/http"
+	"BlackHole/pkg/apperror"
 
 	"github.com/gin-gonic/gin"
 )
@@ -21,12 +20,11 @@ import (
 // @Success 200 {object} response.ApiResponse
 // @Failure 400 {object} response.ApiResponse
 // @Router /v1/traffic [get]
-func (h *Handler) ListNetworkTraffic(c *gin.Context, e *env.Env) {
+func (h *Handler) ListNetworkTraffic(c *gin.Context) (response.Result, error) {
 	ctx := c.Request.Context()
 	var request message.ListNetworkTrafficRequest
 	if err := c.ShouldBindQuery(&request); err != nil {
-		c.JSON(http.StatusBadRequest, response.InvalidParams.Tr(e).WithData(e.TranslatErrors(err)))
-		return
+		return response.Result{}, apperror.Wrap(errorcode.InvalidParams, err)
 	}
 
 	traffics, err := h.services.Traffic.List(ctx, service.TrafficListOptions{
@@ -35,10 +33,8 @@ func (h *Handler) ListNetworkTraffic(c *gin.Context, e *env.Env) {
 		OrderBy:  request.OrderBy,
 	})
 	if err != nil {
-		logger.FromContext(ctx).WithError(err).Error("List network traffic")
-		c.JSON(http.StatusInternalServerError, response.SystemError.Tr(e))
-		return
+		return response.Result{}, err
 	}
 
-	c.JSON(http.StatusOK, response.ApiSuccess.Tr(e).WithData(traffics))
+	return response.OK(traffics), nil
 }

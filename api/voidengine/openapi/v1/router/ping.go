@@ -9,8 +9,8 @@ import (
 func registerPingRoutes(server *openapi.Server, h *handler.Handler) {
 	server.RegisterRoutes("", []router.Route{
 		// GET
-		router.NewGetRoute("/ping", server.WrapEnv(h.PingGet)),
+		router.NewGetRoute("/ping", server.Wrap(h.PingGet)),
 		// POST
-		router.NewPostRoute("/ping", server.WrapEnv(h.PingPost)),
+		router.NewPostRoute("/ping", server.Wrap(h.PingPost)),
 	})
 }

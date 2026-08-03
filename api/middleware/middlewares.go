@@ -5,7 +5,6 @@ import (
 	"BlackHole/pkg/requestctx"
 	"encoding/json"
 	"fmt"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -37,13 +36,6 @@ func ApiLogMiddlewares(router *gin.Engine, logFile string, logSize string) error
 		}
 		return string(message) + "\n"
 	}}))
-
-	router.Use(gin.CustomRecovery(func(c *gin.Context, recovered interface{}) {
-		logger.FromContext(c.Request.Context()).
-			WithField("panic", fmt.Sprint(recovered)).
-			Error("panic recovered")
-		c.AbortWithStatus(http.StatusInternalServerError)
-	}))
 
 	return nil
 }

@@ -1,13 +1,14 @@
 package openapi
 
 import (
-	"BlackHole/api/common/response"
 	"BlackHole/api/middleware"
 	"BlackHole/api/router"
 	"BlackHole/api/swagger"
 	"BlackHole/api/wrapper"
 	"BlackHole/docs/api/voidengine"
+	"BlackHole/internal/voidengine/errorcode"
 	"BlackHole/internal/voidengine/locales"
+	"BlackHole/pkg/apperror"
 	"BlackHole/pkg/env"
 	"fmt"
 	"net"
@@ -20,33 +21,45 @@ import (
 )
 
 type Server struct {
-	address     string
-	router      *gin.Engine
-	routes      map[string][]router.Route
-	envProvider *env.Provider
+	address      string
+	router       *gin.Engine
+	routes       map[string][]router.Route
+	envProvider  *env.Provider
+	errorCatalog *apperror.Catalog
 }
 
 func NewHTTPServer(address, apiLogFile string, apiLogSize string, requestTimeout time.Duration) (*Server, error) {
-	envProvider, err := env.NewProvider(locales.EnTranslations, locales.ZhTranslations)
+	envProvider, err := env.NewProvider(locales.English(), locales.Chinese())
 	if err != nil {
 		return nil, fmt.Errorf("initialize env provider: %w", err)
 	}
 
-	server := &Server{
-		address:     address,
-		router:      gin.New(),
-		routes:      make(map[string][]router.Route),
-		envProvider: envProvider,
+	errorCatalog, err := newErrorCatalog()
+	if err != nil {
+		return nil, fmt.Errorf("initialize error catalog: %w", err)
+	}
+	if err := envProvider.ValidateMessages(errorCatalog.MessageIDs()); err != nil {
+		return nil, fmt.Errorf("validate error messages: %w", err)
 	}
 
-	server.router.Use(middleware.RequestContext(requestTimeout))
+	server := &Server{
+		address:      address,
+		router:       gin.New(),
+		routes:       make(map[string][]router.Route),
+		envProvider:  envProvider,
+		errorCatalog: errorCatalog,
+	}
+
 	if err := middleware.ApiLogMiddlewares(server.router, apiLogFile, apiLogSize); err != nil {
 		return nil, err
 	}
+	server.router.Use(middleware.ErrorHandler(envProvider, errorCatalog, errorcode.SystemError))
+	server.router.Use(middleware.Recovery(errorcode.SystemError))
+	server.router.Use(middleware.RequestContext(requestTimeout))
 
 	server.router.NoRoute(func(c *gin.Context) {
-		e := server.envProvider.NewEnvFromContext(c.Request.Context())
-		c.JSON(http.StatusNotFound, response.ApiNotFound.Tr(e))
+		_ = c.Error(apperror.New(errorcode.APINotFound))
+		c.Abort()
 	})
 
 	swagger.SwaggerGenerator(server.router)
@@ -110,6 +123,6 @@ func (s *Server) RegisterRoutes(group string, routes []router.Route) {
 	s.routes[group] = append(s.routes[group], routes...)
 }
 
-func (s *Server) WrapEnv(handler wrapper.WrapperHandlerFunc) gin.HandlerFunc {
-	return wrapper.WrapperEnvFunc(s.envProvider, handler)
+func (s *Server) Wrap(handler wrapper.HandlerFunc) gin.HandlerFunc {
+	return wrapper.Adapt(s.envProvider, handler)
 }

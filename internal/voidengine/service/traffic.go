@@ -1,7 +1,9 @@
 package service
 
 import (
+	"BlackHole/internal/voidengine/errorcode"
 	"BlackHole/internal/voidengine/model"
+	"BlackHole/pkg/apperror"
 	"context"
 )
 
@@ -25,7 +27,7 @@ func NewTrafficService(dao TrafficDataAccess) *TrafficService {
 
 func (s *TrafficService) List(ctx context.Context, options TrafficListOptions) ([]model.NetworkTraffic, error) {
 	if s.dao == nil {
-		return nil, NewError(ErrorCodeDependencyUnavailable)
+		return nil, apperror.New(errorcode.SystemError)
 	}
 
 	return s.dao.List(ctx, model.TrafficQuery{

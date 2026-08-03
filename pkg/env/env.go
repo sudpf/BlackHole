@@ -4,6 +4,7 @@ import (
 	"BlackHole/pkg/constant"
 	"BlackHole/pkg/requestctx"
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
@@ -23,9 +24,15 @@ type Provider struct {
 	localizerZh *i18n.Localizer
 	localizerEn *i18n.Localizer
 	uni         *ut.UniversalTranslator
+	matcher     language.Matcher
+	messageIDs  map[string]struct{}
 }
 
 func NewProvider(enMessages, zhMessages map[string]string) (*Provider, error) {
+	if err := validateMessages(enMessages, zhMessages); err != nil {
+		return nil, err
+	}
+
 	uni, err := setupTranslations()
 	if err != nil {
 		return nil, fmt.Errorf("setup translations: %w", err)
@@ -40,7 +47,31 @@ func NewProvider(enMessages, zhMessages map[string]string) (*Provider, error) {
 		localizerZh: localizerZh,
 		localizerEn: localizerEn,
 		uni:         uni,
+		matcher:     language.NewMatcher([]language.Tag{language.English, language.SimplifiedChinese}),
+		messageIDs:  messageIDs(enMessages),
 	}, nil
+}
+
+func validateMessages(enMessages, zhMessages map[string]string) error {
+	for id := range enMessages {
+		if _, exists := zhMessages[id]; !exists {
+			return fmt.Errorf("missing chinese message %q", id)
+		}
+	}
+	for id := range zhMessages {
+		if _, exists := enMessages[id]; !exists {
+			return fmt.Errorf("missing english message %q", id)
+		}
+	}
+	return nil
+}
+
+func messageIDs(messages map[string]string) map[string]struct{} {
+	result := make(map[string]struct{}, len(messages))
+	for id := range messages {
+		result[id] = struct{}{}
+	}
+	return result
 }
 
 func setupTranslations() (*ut.UniversalTranslator, error) {
@@ -111,6 +142,7 @@ type Env struct {
 }
 
 func (p *Provider) NewEnv(lang string, clientIp string) *Env {
+	lang = p.matchLanguage(lang)
 	trans, _ := p.uni.GetTranslator(lang)
 
 	localizer := p.localizerEn
@@ -132,6 +164,28 @@ func (p *Provider) NewEnvFromContext(ctx context.Context) *Env {
 	return env
 }
 
+func (p *Provider) ValidateMessages(messageIDs []string) error {
+	for _, id := range messageIDs {
+		if _, exists := p.messageIDs[id]; !exists {
+			return fmt.Errorf("message %q is not defined", id)
+		}
+	}
+	return nil
+}
+
+func (p *Provider) matchLanguage(value string) string {
+	tags, _, err := language.ParseAcceptLanguage(value)
+	if err != nil || len(tags) == 0 {
+		return constant.LangEnglish
+	}
+
+	_, index, _ := p.matcher.Match(tags...)
+	if index == 1 {
+		return constant.LangChinese
+	}
+	return constant.LangEnglish
+}
+
 func removeTopStruct(fields map[string]string) map[string]string {
 	res := map[string]string{}
 	for field, err := range fields {
@@ -141,14 +195,17 @@ func removeTopStruct(fields map[string]string) map[string]string {
 	return res
 }
 
-func (ev *Env) TranslatErrors(err error) map[string]string {
-	errs, _ := err.(validator.ValidationErrors)
-
-	return removeTopStruct(errs.Translate(ev.Trans))
+func (ev *Env) TranslateErrors(err error) map[string]string {
+	var validationErrors validator.ValidationErrors
+	if !errors.As(err, &validationErrors) {
+		return nil
+	}
+	return removeTopStruct(validationErrors.Translate(ev.Trans))
 }
 
-func (ev *Env) MustLocalize(message string) string {
-	return ev.localizer.MustLocalize(&i18n.LocalizeConfig{
-		MessageID: message,
+func (ev *Env) Localize(messageID string, templateData map[string]any) (string, error) {
+	return ev.localizer.Localize(&i18n.LocalizeConfig{
+		MessageID:    messageID,
+		TemplateData: templateData,
 	})
 }

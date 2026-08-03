@@ -3,10 +3,9 @@ package handler
 import (
 	"BlackHole/api/common/response"
 	"BlackHole/api/voidengine/openapi/v1/message"
+	"BlackHole/internal/voidengine/errorcode"
 	"BlackHole/internal/voidengine/service"
-	"BlackHole/pkg/env"
-	"BlackHole/pkg/logger"
-	"net/http"
+	"BlackHole/pkg/apperror"
 
 	"github.com/gin-gonic/gin"
 )
@@ -21,12 +20,11 @@ import (
 // @Success 200 {object} response.ApiResponse
 // @Failure 400 {object} response.ApiResponse
 // @Router /v1/user [get]
-func (h *Handler) ListUser(c *gin.Context, e *env.Env) {
+func (h *Handler) ListUser(c *gin.Context) (response.Result, error) {
 	ctx := c.Request.Context()
 	var request message.ListUserRequest
 	if err := c.ShouldBindQuery(&request); err != nil {
-		c.JSON(http.StatusBadRequest, response.InvalidParams.Tr(e).WithData(e.TranslatErrors(err)))
-		return
+		return response.Result{}, apperror.Wrap(errorcode.InvalidParams, err)
 	}
 
 	users, err := h.services.User.List(ctx, service.UserListOptions{
@@ -36,11 +34,10 @@ func (h *Handler) ListUser(c *gin.Context, e *env.Env) {
 		Username: request.UsernameFilter(),
 	})
 	if err != nil {
-		respondUserServiceError(c, e, err)
-		return
+		return response.Result{}, err
 	}
 
-	c.JSON(http.StatusOK, response.ApiSuccess.Tr(e).WithData(users))
+	return response.OK(users), nil
 }
 
 // AddUser
@@ -53,12 +50,11 @@ func (h *Handler) ListUser(c *gin.Context, e *env.Env) {
 // @Success 200 {object} response.ApiResponse
 // @Failure 400 {object} response.ApiResponse
 // @Router /v1/user [post]
-func (h *Handler) AddUser(c *gin.Context, e *env.Env) {
+func (h *Handler) AddUser(c *gin.Context) (response.Result, error) {
 	ctx := c.Request.Context()
 	var request message.AddUserRequest
 	if err := c.ShouldBind(&request); err != nil {
-		c.JSON(http.StatusBadRequest, response.InvalidParams.Tr(e).WithData(e.TranslatErrors(err)))
-		return
+		return response.Result{}, apperror.Wrap(errorcode.InvalidParams, err)
 	}
 
 	if err := h.services.User.Add(ctx, service.AddUserInput{
@@ -67,11 +63,10 @@ func (h *Handler) AddUser(c *gin.Context, e *env.Env) {
 		Email:    request.Email,
 		Phone:    request.Phone,
 	}); err != nil {
-		respondUserServiceError(c, e, err)
-		return
+		return response.Result{}, err
 	}
 
-	c.JSON(http.StatusOK, response.ApiSuccess.Tr(e))
+	return response.OK(nil), nil
 }
 
 // ModifyUser
@@ -84,12 +79,11 @@ func (h *Handler) AddUser(c *gin.Context, e *env.Env) {
 // @Success 200 {object} response.ApiResponse
 // @Failure 400 {object} response.ApiResponse
 // @Router /v1/user [put]
-func (h *Handler) ModifyUser(c *gin.Context, e *env.Env) {
+func (h *Handler) ModifyUser(c *gin.Context) (response.Result, error) {
 	ctx := c.Request.Context()
 	var request message.ModifyUserRequest
 	if err := c.ShouldBind(&request); err != nil {
-		c.JSON(http.StatusBadRequest, response.InvalidParams.Tr(e).WithData(e.TranslatErrors(err)))
-		return
+		return response.Result{}, apperror.Wrap(errorcode.InvalidParams, err)
 	}
 
 	if err := h.services.User.Modify(ctx, service.ModifyUserInput{
@@ -98,11 +92,10 @@ func (h *Handler) ModifyUser(c *gin.Context, e *env.Env) {
 		Email:    request.Email,
 		Phone:    request.Phone,
 	}); err != nil {
-		respondUserServiceError(c, e, err)
-		return
+		return response.Result{}, err
 	}
 
-	c.JSON(http.StatusOK, response.ApiSuccess.Tr(e))
+	return response.OK(nil), nil
 }
 
 // DeleteUser
@@ -115,28 +108,16 @@ func (h *Handler) ModifyUser(c *gin.Context, e *env.Env) {
 // @Success 200 {object} response.ApiResponse
 // @Failure 400 {object} response.ApiResponse
 // @Router /v1/user [delete]
-func (h *Handler) DeleteUser(c *gin.Context, e *env.Env) {
+func (h *Handler) DeleteUser(c *gin.Context) (response.Result, error) {
 	ctx := c.Request.Context()
 	var request message.DeleteUserRequest
 	if err := c.ShouldBind(&request); err != nil {
-		c.JSON(http.StatusBadRequest, response.InvalidParams.Tr(e).WithData(e.TranslatErrors(err)))
-		return
+		return response.Result{}, apperror.Wrap(errorcode.InvalidParams, err)
 	}
 
 	if err := h.services.User.Delete(ctx, request.Username); err != nil {
-		respondUserServiceError(c, e, err)
-		return
+		return response.Result{}, err
 	}
 
-	c.JSON(http.StatusOK, response.ApiSuccess.Tr(e))
-}
-
-func respondUserServiceError(c *gin.Context, e *env.Env, err error) {
-	if service.IsErrorCode(err, service.ErrorCodeUserNotFound) {
-		c.JSON(http.StatusBadRequest, response.UserNotExist.Tr(e))
-		return
-	}
-
-	logger.FromContext(c.Request.Context()).WithError(err).Error("Handle user request")
-	c.JSON(http.StatusInternalServerError, response.SystemError.Tr(e))
+	return response.OK(nil), nil
 }

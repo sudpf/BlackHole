@@ -113,7 +113,7 @@ const docTemplate = `{
                         "maximum": 100,
                         "minimum": 1,
                         "type": "integer",
-                        "example": 20,
+                        "example": 50,
                         "description": "每页数量",
                         "name": "pageSize",
                         "in": "query"
@@ -175,7 +175,7 @@ const docTemplate = `{
                         "maximum": 100,
                         "minimum": 1,
                         "type": "integer",
-                        "example": 20,
+                        "example": 50,
                         "description": "每页数量",
                         "name": "pageSize",
                         "in": "query"
@@ -428,6 +428,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "data": {},
+                "details": {},
                 "message": {
                     "type": "string"
                 }

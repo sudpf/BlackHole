@@ -1,33 +1,6 @@
 package service
 
-import (
-	"BlackHole/internal/voidengine/model"
-	"errors"
-)
-
-type ErrorCode string
-
-const (
-	ErrorCodeDependencyUnavailable ErrorCode = "DEPENDENCY_UNAVAILABLE"
-	ErrorCodeUserNotFound          ErrorCode = "USER_NOT_FOUND"
-)
-
-type Error struct {
-	Code ErrorCode
-}
-
-func (e *Error) Error() string {
-	return string(e.Code)
-}
-
-func NewError(code ErrorCode) error {
-	return &Error{Code: code}
-}
-
-func IsErrorCode(err error, code ErrorCode) bool {
-	var serviceError *Error
-	return errors.As(err, &serviceError) && serviceError.Code == code
-}
+import "BlackHole/internal/voidengine/model"
 
 type Services struct {
 	User    *UserService

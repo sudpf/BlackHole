@@ -1,7 +1,10 @@
 package service
 
 import (
+	"BlackHole/internal/voidengine/errorcode"
 	"BlackHole/internal/voidengine/model"
+	"BlackHole/pkg/apperror"
+	"BlackHole/pkg/logger"
 	"context"
 )
 
@@ -44,7 +47,7 @@ func NewUserService(dao UserDataAccess) *UserService {
 
 func (s *UserService) List(ctx context.Context, options UserListOptions) ([]model.User, error) {
 	if s.dao == nil {
-		return nil, NewError(ErrorCodeDependencyUnavailable)
+		return nil, apperror.New(errorcode.SystemError)
 	}
 
 	return s.dao.List(ctx, model.UserQuery{
@@ -57,7 +60,7 @@ func (s *UserService) List(ctx context.Context, options UserListOptions) ([]mode
 
 func (s *UserService) Add(ctx context.Context, input AddUserInput) error {
 	if s.dao == nil {
-		return NewError(ErrorCodeDependencyUnavailable)
+		return apperror.New(errorcode.SystemError)
 	}
 
 	return s.dao.Create(ctx, &model.User{
@@ -70,7 +73,7 @@ func (s *UserService) Add(ctx context.Context, input AddUserInput) error {
 
 func (s *UserService) Modify(ctx context.Context, input ModifyUserInput) error {
 	if s.dao == nil {
-		return NewError(ErrorCodeDependencyUnavailable)
+		return apperror.New(errorcode.SystemError)
 	}
 
 	user, err := s.dao.FindByName(ctx, input.Username)
@@ -78,7 +81,9 @@ func (s *UserService) Modify(ctx context.Context, input ModifyUserInput) error {
 		return err
 	}
 	if user == nil {
-		return NewError(ErrorCodeUserNotFound)
+		return apperror.NewWithParams(errorcode.UserNotFound, apperror.Params{
+			"username": input.Username,
+		})
 	}
 
 	if input.Password != nil {
@@ -96,7 +101,20 @@ func (s *UserService) Modify(ctx context.Context, input ModifyUserInput) error {
 
 func (s *UserService) Delete(ctx context.Context, username string) error {
 	if s.dao == nil {
-		return NewError(ErrorCodeDependencyUnavailable)
+		return apperror.New(errorcode.SystemError)
+	}
+
+	user, err := s.dao.FindByName(ctx, username)
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		logger.FromContext(ctx).
+			WithField("username", username).
+			Warn("delete user not found")
+		return apperror.NewWithParams(errorcode.UserNotFound, apperror.Params{
+			"username": username,
+		})
 	}
 
 	return s.dao.DeleteByName(ctx, username)
