@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -47,12 +48,21 @@ func sendLog(socketPath string, logMessage LogMessage) error {
 }
 
 func main() {
+	if err := run(); err != nil {
+		log.Printf("tools exited: %v", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
 	// Unix Socket 地址（与 Syslog 服务配置一致）
 	socketPath := "/tmp/suricata_unix_sock"
 
 	// 检查 Socket 文件是否存在
 	if _, err := os.Stat(socketPath); os.IsNotExist(err) {
-		log.Fatalf("Socket file does not exist: %v", socketPath)
+		return fmt.Errorf("socket file does not exist: %s", socketPath)
+	} else if err != nil {
+		return fmt.Errorf("stat socket file %s: %w", socketPath, err)
 	}
 
 	// 创建一个示例日志消息
@@ -71,7 +81,8 @@ func main() {
 
 	// 发送日志消息
 	if err := sendLog(socketPath, logMessage); err != nil {
-		log.Fatalf("Failed to send log: %v", err)
+		return fmt.Errorf("send log: %w", err)
 	}
 
+	return nil
 }
