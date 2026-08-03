@@ -35,7 +35,7 @@ func TestErrorHandlerLocalizesApplicationError(t *testing.T) {
 	}
 
 	body := decodeErrorResponse(t, recorder)
-	if body.Code != testUserNotFound {
+	if body.Code != int(testUserNotFound) {
 		t.Fatalf("code = %d, want %d", body.Code, testUserNotFound)
 	}
 	if body.Message != "用户 missing 不存在" {
@@ -81,7 +81,7 @@ func TestErrorHandlerConvertsUnknownError(t *testing.T) {
 	if recorder.Code != http.StatusInternalServerError {
 		t.Fatalf("status = %d, want %d", recorder.Code, http.StatusInternalServerError)
 	}
-	if body.Code != testSystemError || body.Message != "System error" {
+	if body.Code != int(testSystemError) || body.Message != "System error" {
 		t.Fatalf("response = %+v, want system error", body)
 	}
 }
@@ -97,7 +97,7 @@ func TestErrorHandlerRecoversPanic(t *testing.T) {
 	if recorder.Code != http.StatusInternalServerError {
 		t.Fatalf("status = %d, want %d", recorder.Code, http.StatusInternalServerError)
 	}
-	if body.Code != testSystemError {
+	if body.Code != int(testSystemError) {
 		t.Fatalf("code = %d, want %d", body.Code, testSystemError)
 	}
 }
