@@ -1,9 +1,9 @@
 package config
 
 import (
+	"BlackHole/internal/runtime/configpath"
 	"bytes"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -53,12 +53,12 @@ type DatabaseConfig struct {
 }
 
 func Load(file string) (*Config, error) {
-	appName, err := executableName()
+	appName, err := configpath.ExecutableName()
 	if err != nil {
 		return nil, err
 	}
 
-	configFile, err := resolveConfigFile(file)
+	configFile, err := configpath.Resolve(file)
 	if err != nil {
 		return nil, err
 	}
@@ -120,29 +120,6 @@ func (c *Config) RequestTimeout() time.Duration {
 
 func (c *Config) ShutdownTimeout() time.Duration {
 	return c.App.ShutdownTimeout
-}
-
-func resolveConfigFile(file string) (string, error) {
-	if strings.TrimSpace(file) == "" {
-		return "", fmt.Errorf("config file is required")
-	}
-	if filepath.IsAbs(file) {
-		return filepath.Clean(file), nil
-	}
-
-	absPath, err := filepath.Abs(file)
-	if err != nil {
-		return "", fmt.Errorf("resolve config file %q: %w", file, err)
-	}
-	return absPath, nil
-}
-
-func executableName() (string, error) {
-	appPath, err := os.Executable()
-	if err != nil {
-		return "", fmt.Errorf("get executable path: %w", err)
-	}
-	return filepath.Base(appPath), nil
 }
 
 func validate(cfg *Config) error {

@@ -1,4 +1,4 @@
-package config
+package configpath
 
 import (
 	"os"
@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestResolveConfigFileUsesWorkingDirectory(t *testing.T) {
+func TestResolveUsesWorkingDirectory(t *testing.T) {
 	workingDir := t.TempDir()
 	oldWorkingDir, err := os.Getwd()
 	if err != nil {
@@ -22,19 +22,32 @@ func TestResolveConfigFileUsesWorkingDirectory(t *testing.T) {
 		t.Fatalf("change working directory: %v", chdirErr)
 	}
 
-	got, err := resolveConfigFile(filepath.Join("conf", "voidengine.toml"))
+	got, err := Resolve(filepath.Join("conf", "app.yaml"))
 	if err != nil {
 		t.Fatalf("resolve config file: %v", err)
 	}
 
-	want := filepath.Join(workingDir, "conf", "voidengine.toml")
+	want := filepath.Join(workingDir, "conf", "app.yaml")
 	if got != want {
 		t.Fatalf("config file = %q, want %q", got, want)
 	}
 }
 
-func TestResolveConfigFileRejectsEmptyPath(t *testing.T) {
-	if _, err := resolveConfigFile(" "); err == nil {
+func TestResolveCleansAbsolutePath(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "conf", "..", "app.yaml")
+	got, err := Resolve(path)
+	if err != nil {
+		t.Fatalf("resolve config file: %v", err)
+	}
+
+	want := filepath.Clean(path)
+	if got != want {
+		t.Fatalf("config file = %q, want %q", got, want)
+	}
+}
+
+func TestResolveRejectsEmptyPath(t *testing.T) {
+	if _, err := Resolve(" "); err == nil {
 		t.Fatal("expected empty config file to be rejected")
 	}
 }
