@@ -33,11 +33,6 @@ func NewProvider(enMessages, zhMessages map[string]string) (*Provider, error) {
 		return nil, err
 	}
 
-	uni, err := setupTranslations()
-	if err != nil {
-		return nil, fmt.Errorf("setup translations: %w", err)
-	}
-
 	localizerEn, localizerZh, err := newLocalizers(enMessages, zhMessages)
 	if err != nil {
 		return nil, fmt.Errorf("initialize localizers: %w", err)
@@ -46,7 +41,7 @@ func NewProvider(enMessages, zhMessages map[string]string) (*Provider, error) {
 	return &Provider{
 		localizerZh: localizerZh,
 		localizerEn: localizerEn,
-		uni:         uni,
+		uni:         newUniversalTranslator(),
 		matcher:     language.NewMatcher([]language.Tag{language.English, language.SimplifiedChinese}),
 		messageIDs:  messageIDs(enMessages),
 	}, nil
@@ -74,10 +69,16 @@ func messageIDs(messages map[string]string) map[string]struct{} {
 	return result
 }
 
-func setupTranslations() (*ut.UniversalTranslator, error) {
+func newUniversalTranslator() *ut.UniversalTranslator {
 	zhT := zh.New()
 	enT := en.New()
-	uni := ut.New(enT, zhT, enT)
+	return ut.New(enT, zhT, enT)
+}
+
+func InitValidatorTranslations(provider *Provider) error {
+	if provider == nil {
+		return fmt.Errorf("env provider is required")
+	}
 
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		v.RegisterTagNameFunc(func(fld reflect.StructField) string {
@@ -88,24 +89,24 @@ func setupTranslations() (*ut.UniversalTranslator, error) {
 			return name
 		})
 
-		transEn, ok := uni.GetTranslator(constant.LangEnglish)
+		transEn, ok := provider.uni.GetTranslator(constant.LangEnglish)
 		if !ok {
-			return nil, fmt.Errorf("uni.GetTranslator(%s) failed", constant.LangEnglish)
+			return fmt.Errorf("uni.GetTranslator(%s) failed", constant.LangEnglish)
 		}
 		if err := enTranslations.RegisterDefaultTranslations(v, transEn); err != nil {
-			return nil, err
+			return err
 		}
 
-		transZh, ok := uni.GetTranslator(constant.LangChinese)
+		transZh, ok := provider.uni.GetTranslator(constant.LangChinese)
 		if !ok {
-			return nil, fmt.Errorf("uni.GetTranslator(%s) failed", constant.LangChinese)
+			return fmt.Errorf("uni.GetTranslator(%s) failed", constant.LangChinese)
 		}
 		if err := zhTranslations.RegisterDefaultTranslations(v, transZh); err != nil {
-			return nil, err
+			return err
 		}
 	}
 
-	return uni, nil
+	return nil
 }
 
 func newLocalizers(enMessages, zhMessages map[string]string) (*i18n.Localizer, *i18n.Localizer, error) {

@@ -122,6 +122,9 @@ func newErrorTestRouter(t *testing.T) *gin.Engine {
 	if err != nil {
 		t.Fatalf("NewProvider error = %v", err)
 	}
+	if err = env.InitValidatorTranslations(provider); err != nil {
+		t.Fatalf("InitValidatorTranslations error = %v", err)
+	}
 
 	catalog, err := apperror.NewCatalog(
 		apperror.Definition{Code: apperror.Success, HTTPStatus: http.StatusOK},

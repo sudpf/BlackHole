@@ -50,3 +50,9 @@ func TestNewProviderRejectsIncompleteMessages(t *testing.T) {
 		t.Fatal("NewProvider expected missing translation error")
 	}
 }
+
+func TestInitValidatorTranslationsRejectsNilProvider(t *testing.T) {
+	if err := InitValidatorTranslations(nil); err == nil {
+		t.Fatal("InitValidatorTranslations expected nil provider error")
+	}
+}

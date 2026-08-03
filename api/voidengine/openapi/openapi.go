@@ -33,6 +33,9 @@ func NewHTTPServer(address, apiLogFile string, apiLogSize string, requestTimeout
 	if err != nil {
 		return nil, fmt.Errorf("initialize env provider: %w", err)
 	}
+	if err = env.InitValidatorTranslations(envProvider); err != nil {
+		return nil, fmt.Errorf("initialize validator translations: %w", err)
+	}
 
 	errorCatalog, err := newErrorCatalog()
 	if err != nil {
