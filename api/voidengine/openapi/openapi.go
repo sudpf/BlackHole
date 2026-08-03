@@ -27,10 +27,6 @@ type Server struct {
 }
 
 func NewHTTPServer(address, apiLogFile string, apiLogSize string, requestTimeout time.Duration) (*Server, error) {
-	gin.SetMode(gin.ReleaseMode)
-	gin.DefaultWriter = log.StandardLogger().Out
-	gin.DefaultErrorWriter = log.StandardLogger().Out
-
 	envProvider, err := env.NewProvider(locales.EnTranslations, locales.ZhTranslations)
 	if err != nil {
 		return nil, fmt.Errorf("initialize env provider: %w", err)
