@@ -5,16 +5,16 @@ import (
 	v1handler "BlackHole/api/voidengine/openapi/v1/handler"
 	v1router "BlackHole/api/voidengine/openapi/v1/router"
 	"BlackHole/internal/runtime"
+	appconfig "BlackHole/internal/voidengine/config"
 	"BlackHole/internal/voidengine/model"
 	"BlackHole/internal/voidengine/service"
-	"BlackHole/pkg/config"
 	"context"
 	"errors"
 	"fmt"
 	"net/http"
 )
 
-func Run(cfg *config.VoidEngineConfig) (err error) {
+func Run(cfg *appconfig.Config) (err error) {
 	models, err := model.New(cfg.Database, cfg.LogDir(), cfg.LogSize())
 	if err != nil {
 		return fmt.Errorf("initialize models: %w", err)

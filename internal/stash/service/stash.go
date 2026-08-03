@@ -1,11 +1,11 @@
 package service
 
 import (
+	"BlackHole/internal/stash/config"
 	"BlackHole/internal/stash/service/filter"
 	"BlackHole/internal/stash/service/handler"
 	"BlackHole/internal/stash/service/input"
 	"BlackHole/internal/stash/service/output"
-	"BlackHole/pkg/config"
 	"errors"
 	"fmt"
 
@@ -19,7 +19,7 @@ type Stash struct {
 	handlers []*handler.MessageHandler
 }
 
-func New(cfg *config.StashConfig) (_ *Stash, err error) {
+func New(cfg *config.Config) (_ *Stash, err error) {
 	if cfg == nil {
 		return nil, fmt.Errorf("config is nil")
 	}

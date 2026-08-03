@@ -1,7 +1,7 @@
 package model
 
 import (
-	"BlackHole/pkg/config"
+	"BlackHole/internal/voidengine/config"
 	"BlackHole/pkg/db"
 	"errors"
 	"fmt"

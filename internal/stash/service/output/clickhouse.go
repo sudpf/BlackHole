@@ -1,7 +1,7 @@
 package output
 
 import (
-	"BlackHole/pkg/config"
+	"BlackHole/internal/stash/config"
 	"context"
 	"errors"
 	"fmt"

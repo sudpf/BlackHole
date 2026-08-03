@@ -1,8 +1,8 @@
 package input
 
 import (
+	"BlackHole/internal/stash/config"
 	"BlackHole/internal/stash/service/handler"
-	"BlackHole/pkg/config"
 	"context"
 	"fmt"
 	"os"

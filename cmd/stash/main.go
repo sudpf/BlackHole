@@ -2,7 +2,7 @@ package main
 
 import (
 	"BlackHole/internal/stash/app"
-	"BlackHole/pkg/config"
+	"BlackHole/internal/stash/config"
 	"BlackHole/pkg/logger"
 	"flag"
 
@@ -14,7 +14,7 @@ var configFile = flag.String("f", "stash.yaml", "Specify the config file")
 func main() {
 	flag.Parse()
 
-	cfg, err := config.LoadStashConfig(*configFile)
+	cfg, err := config.Load(*configFile)
 	if err != nil {
 		log.WithError(err).Fatal("Parse config file error")
 	}

@@ -1,8 +1,8 @@
 package output
 
 import (
+	"BlackHole/internal/stash/config"
 	"BlackHole/internal/stash/service/filter"
-	"BlackHole/pkg/config"
 	"errors"
 	"fmt"
 	"log/syslog"

@@ -1,7 +1,7 @@
 package filter
 
 import (
-	"BlackHole/pkg/config"
+	"BlackHole/internal/stash/config"
 	"strings"
 )
 

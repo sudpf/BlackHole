@@ -1,6 +1,6 @@
 package filter
 
-import "BlackHole/pkg/config"
+import "BlackHole/internal/stash/config"
 
 const (
 	filterDrop         = "drop"

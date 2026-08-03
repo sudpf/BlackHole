@@ -1,7 +1,7 @@
 package input
 
 import (
-	"BlackHole/pkg/config"
+	"BlackHole/internal/stash/config"
 
 	"github.com/zeromicro/go-queue/kq"
 )

@@ -2,7 +2,7 @@ package main
 
 import (
 	"BlackHole/internal/voidengine/app"
-	"BlackHole/pkg/config"
+	"BlackHole/internal/voidengine/config"
 	"BlackHole/pkg/logger"
 	"flag"
 
@@ -13,7 +13,7 @@ func main() {
 	configFile := flag.String("config-file", "voidengine.toml", "config file")
 	flag.Parse()
 
-	cfg, err := config.LoadVoidEngineConfig(*configFile)
+	cfg, err := config.Load(*configFile)
 	if err != nil {
 		log.WithError(err).Fatal("Parse config file error")
 	}
