@@ -14,8 +14,8 @@ import (
 	"net/http"
 )
 
-func Run(cfg *appconfig.Config) (err error) {
-	models, err := model.New(cfg.Database, cfg.LogDir(), cfg.LogSize())
+func Run(ctx context.Context, cfg *appconfig.Config) (err error) {
+	models, err := model.New(ctx, cfg.Database, cfg.LogDir(), cfg.LogSize())
 	if err != nil {
 		return fmt.Errorf("initialize models: %w", err)
 	}

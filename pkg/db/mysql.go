@@ -62,24 +62,31 @@ func (m *MySQLDatabase) CreateTable(model ...interface{}) error {
 	return m.DB.AutoMigrate(model...)
 }
 
-func (m *MySQLDatabase) CreateDatabase() error {
+func (m *MySQLDatabase) CreateDatabase(ctx context.Context) error {
 	dbConfig, err := mysqlParser.ParseDSN(m.link)
 	if err != nil {
-		return err
+		return fmt.Errorf("parse mysql dsn: %w", err)
+	}
+	if dbConfig.DBName == "" {
+		return fmt.Errorf("parse mysql dsn: database name is required")
 	}
 
-	db, err := sql.Open("mysql", fmt.Sprintf("%s:%s@tcp(%s)/", dbConfig.User, dbConfig.Passwd, dbConfig.Addr))
+	dbName := dbConfig.DBName
+	dbConfig.DBName = ""
+	db, err := sql.Open("mysql", dbConfig.FormatDSN())
 	if err != nil {
-		return err
+		return fmt.Errorf("open mysql server connection: %w", err)
 	}
 	defer db.Close()
 
-	if err := db.Ping(); err != nil {
-		return err
+	if err := db.PingContext(ctx); err != nil {
+		return fmt.Errorf("connect mysql server: %w", err)
 	}
 
-	_, err = db.Exec(fmt.Sprintf("CREATE DATABASE IF NOT EXISTS `%s`", escapeMySQLIdentifier(dbConfig.DBName)))
-	return err
+	if _, err := db.ExecContext(ctx, fmt.Sprintf("CREATE DATABASE IF NOT EXISTS `%s`", escapeMySQLIdentifier(dbName))); err != nil {
+		return fmt.Errorf("create mysql database %q: %w", dbName, err)
+	}
+	return nil
 }
 
 func (m *MySQLDatabase) Query(ctx context.Context, model interface{}, conditions map[string]interface{}, options *QueryOptions) (*gorm.DB, error) {
@@ -104,10 +111,10 @@ func (m *MySQLDatabase) Delete(ctx context.Context, model interface{}, condition
 	return m.DB.WithContext(ctx).Where(conditions).Delete(model).Error
 }
 
-func NewMySQLDatabase(connectionString string, debug bool, logDir, logFile, logSize string) (*MySQLDatabase, error) {
+func NewMySQLDatabase(ctx context.Context, connectionString string, debug bool, logDir, logFile, logSize string) (*MySQLDatabase, error) {
 	db := &MySQLDatabase{debug: debug, logDir: logDir, logFile: logFile, logSize: logSize, link: connectionString}
-	if err := db.CreateDatabase(); err != nil {
-		log.Errorf("create database error: %v", err)
+	if err := db.CreateDatabase(ctx); err != nil {
+		log.Errorf("create mysql database error: %v", err)
 		return nil, err
 	}
 

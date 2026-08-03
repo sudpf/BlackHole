@@ -4,6 +4,7 @@ import (
 	"BlackHole/internal/voidengine/app"
 	"BlackHole/internal/voidengine/config"
 	"BlackHole/pkg/logger"
+	"context"
 	"flag"
 	"fmt"
 	"os"
@@ -33,7 +34,7 @@ func run() error {
 
 	log.Info(cfg.String())
 
-	if err := app.Run(cfg); err != nil {
+	if err := app.Run(context.Background(), cfg); err != nil {
 		return fmt.Errorf("run VoidEngine: %w", err)
 	}
 

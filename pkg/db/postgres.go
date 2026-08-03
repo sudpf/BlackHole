@@ -4,9 +4,11 @@ import (
 	"BlackHole/pkg/logger"
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/sirupsen/logrus"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -61,29 +63,39 @@ func (p *PostgreSQLDatabase) CreateTable(model ...interface{}) error {
 	return p.DB.AutoMigrate(model...)
 }
 
-func (p *PostgreSQLDatabase) CreateDatabase() error {
+func (p *PostgreSQLDatabase) CreateDatabase(ctx context.Context) error {
 	dbConfig, err := pgx.ParseConfig(p.link)
 	if err != nil {
-		return err
+		return fmt.Errorf("parse postgres dsn: %w", err)
+	}
+	if dbConfig.Config.Database == "" {
+		return fmt.Errorf("parse postgres dsn: database name is required")
 	}
 
-	dbExist, err := PGDatabaseExist(dbConfig.Host, dbConfig.User, dbConfig.Password, dbConfig.Database)
+	dbName := dbConfig.Config.Database
+	adminConfig := dbConfig.Copy()
+	adminConfig.Config.Database = "postgres"
+
+	db := stdlib.OpenDB(*adminConfig)
+	defer db.Close()
+
+	if err := db.PingContext(ctx); err != nil {
+		return fmt.Errorf("connect postgres admin database: %w", err)
+	}
+
+	dbExist, err := postgresDatabaseExists(ctx, db, dbName)
 	if err != nil {
-		return err
+		return fmt.Errorf("check postgres database %q: %w", dbName, err)
 	}
 
 	if dbExist {
 		return nil
 	}
 
-	db, err := sql.Open("postgres", fmt.Sprintf("host=%s user=%s password=%s dbname=%s", dbConfig.Host, dbConfig.User, dbConfig.Password, dbConfig.Database))
-	if err != nil {
-		return err
+	if _, err := db.ExecContext(ctx, "CREATE DATABASE "+quotePostgresIdentifier(dbName)); err != nil {
+		return fmt.Errorf("create postgres database %q: %w", dbName, err)
 	}
-	defer db.Close()
-
-	_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s", dbConfig.Database))
-	return err
+	return nil
 }
 
 func (p *PostgreSQLDatabase) Query(ctx context.Context, model interface{}, conditions map[string]interface{}, options *QueryOptions) (*gorm.DB, error) {
@@ -113,8 +125,12 @@ func (p *PostgreSQLDatabase) Delete(ctx context.Context, model interface{}, cond
 	return p.DB.WithContext(ctx).Where(conditions).Delete(model).Error
 }
 
-func NewPostgreSQLDatabase(connectionString string, logLevel string, logFile string, logSize string) (*PostgreSQLDatabase, error) {
+func NewPostgreSQLDatabase(ctx context.Context, connectionString string, logLevel string, logFile string, logSize string) (*PostgreSQLDatabase, error) {
 	db := &PostgreSQLDatabase{logLevel: logLevel, logFile: logFile, logSize: logSize, link: connectionString}
+
+	if err := db.CreateDatabase(ctx); err != nil {
+		return nil, err
+	}
 
 	pgDb, err := db.Connect(connectionString)
 	if err != nil {
@@ -124,18 +140,18 @@ func NewPostgreSQLDatabase(connectionString string, logLevel string, logFile str
 	return db, nil
 }
 
-func PGDatabaseExist(addr, user, passwd, dbName string) (bool, error) {
-	db, err := sql.Open("postgres", fmt.Sprintf("host=%s user=%s password=%s dbname=postgres", addr, user, passwd))
+func postgresDatabaseExists(ctx context.Context, db *sql.DB, dbName string) (bool, error) {
+	var value int
+	err := db.QueryRowContext(ctx, "SELECT 1 FROM pg_database WHERE datname = $1", dbName).Scan(&value)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, nil
+	}
 	if err != nil {
 		return false, err
 	}
-	defer db.Close()
+	return true, nil
+}
 
-	rows, err := db.Query(fmt.Sprintf("SELECT datname FROM pg_database WHERE datname = '%s'", dbName))
-	if err != nil {
-		return false, err
-	}
-	defer rows.Close()
-
-	return rows.Next(), nil
+func quotePostgresIdentifier(identifier string) string {
+	return pgx.Identifier{identifier}.Sanitize()
 }

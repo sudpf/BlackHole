@@ -5,6 +5,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -161,5 +163,47 @@ func TestQueryAllowsNilOptions(t *testing.T) {
 
 	if len(records) != 2 {
 		t.Fatalf("records length = %d, want 2", len(records))
+	}
+}
+
+func TestDatabaseIdentifierEscaping(t *testing.T) {
+	tests := []struct {
+		name string
+		got  string
+		want string
+	}{
+		{
+			name: "mysql",
+			got:  escapeMySQLIdentifier("app`db"),
+			want: "app``db",
+		},
+		{
+			name: "clickhouse",
+			got:  escapeClickHouseIdentifier("app`db"),
+			want: "app``db",
+		},
+		{
+			name: "postgres",
+			got:  quotePostgresIdentifier(`app"db`),
+			want: `"app""db"`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.got != tt.want {
+				t.Fatalf("escaped identifier = %q, want %q", tt.got, tt.want)
+			}
+		})
+	}
+}
+
+func TestSQLiteCreateDatabaseHonorsCanceledContext(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	database := &SQLiteDatabase{link: filepath.Join(t.TempDir(), "test.db")}
+	if err := database.CreateDatabase(ctx); !errors.Is(err, context.Canceled) {
+		t.Fatalf("CreateDatabase error = %v, want context.Canceled", err)
 	}
 }

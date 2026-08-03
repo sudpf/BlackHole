@@ -67,7 +67,7 @@ func (c *ClickHouseDatabase) CreateTable(model ...interface{}) error {
 	return c.DB.AutoMigrate(model...)
 }
 
-func (c *ClickHouseDatabase) CreateDatabase() error {
+func (c *ClickHouseDatabase) CreateDatabase(ctx context.Context) error {
 	var la *logrusAdapter
 	if c.debug {
 		sqlLogger := logrus.New()
@@ -81,7 +81,6 @@ func (c *ClickHouseDatabase) CreateDatabase() error {
 		la = NewLogrusAdapter(sqlLogger)
 	}
 
-	// 解析 DSN
 	connParams, err := clickhouseParser.ParseDSN(c.link)
 	if err != nil {
 		return fmt.Errorf("parse clickhouse dsn: %w", err)
@@ -89,6 +88,9 @@ func (c *ClickHouseDatabase) CreateDatabase() error {
 
 	if len(connParams.Addr) == 0 {
 		return fmt.Errorf("parse clickhouse dsn: missing address")
+	}
+	if connParams.Auth.Database == "" {
+		return fmt.Errorf("parse clickhouse dsn: database name is required")
 	}
 
 	dsn := fmt.Sprintf("tcp://%s?username=%s&password=%s&read_timeout=10s",
@@ -108,8 +110,11 @@ func (c *ClickHouseDatabase) CreateDatabase() error {
 	}
 	defer sqlDB.Close()
 
-	// 使用原生 SQL 创建新数据库
-	if err := db.Exec(fmt.Sprintf("CREATE DATABASE IF NOT EXISTS `%s`", escapeClickHouseIdentifier(connParams.Auth.Database))).Error; err != nil {
+	if err := sqlDB.PingContext(ctx); err != nil {
+		return fmt.Errorf("connect clickhouse admin: %w", err)
+	}
+
+	if err := db.WithContext(ctx).Exec(fmt.Sprintf("CREATE DATABASE IF NOT EXISTS `%s`", escapeClickHouseIdentifier(connParams.Auth.Database))).Error; err != nil {
 		return fmt.Errorf("create clickhouse database %q: %w", connParams.Auth.Database, err)
 	}
 
@@ -143,10 +148,10 @@ func (c *ClickHouseDatabase) Delete(ctx context.Context, model interface{}, cond
 	return c.DB.WithContext(ctx).Where(conditions).Delete(model).Error
 }
 
-func NewClickHouseDatabase(connectionString string, debug bool, logDir, logFile, logSize string) (*ClickHouseDatabase, error) {
+func NewClickHouseDatabase(ctx context.Context, connectionString string, debug bool, logDir, logFile, logSize string) (*ClickHouseDatabase, error) {
 	db := &ClickHouseDatabase{debug: debug, logDir: logDir, logFile: logFile, logSize: logSize, link: connectionString}
 
-	if err := db.CreateDatabase(); err != nil {
+	if err := db.CreateDatabase(ctx); err != nil {
 		return nil, err
 	}
 

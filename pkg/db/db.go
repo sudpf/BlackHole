@@ -31,6 +31,7 @@ type QueryOptions struct {
 type Database interface {
 	Connect(connectionString string) (*gorm.DB, error)
 	Close() error
+	CreateDatabase(ctx context.Context) error
 	CreateTable(model ...interface{}) error
 	Query(ctx context.Context, model interface{}, conditions map[string]interface{}, options *QueryOptions) (*gorm.DB, error)
 	QueryEx(ctx context.Context, model interface{}, conditions interface{}, options *QueryOptions) (*gorm.DB, error)

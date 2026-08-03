@@ -61,7 +61,11 @@ func (s *SQLiteDatabase) CreateTable(model ...interface{}) error {
 	return s.DB.AutoMigrate(model...)
 }
 
-func (s *SQLiteDatabase) CreateDatabase() error {
+func (s *SQLiteDatabase) CreateDatabase(ctx context.Context) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
 	dbExist, err := SQLiteDatabaseExist(s.link)
 	if err != nil {
 		return err
