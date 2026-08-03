@@ -35,7 +35,7 @@ func Run(ctx context.Context, cfg *appconfig.Config) (err error) {
 	}
 	v1router.RegisterRoutes(apiServer, handlers)
 	server := apiServer.HTTPServer()
-	if err := runtime.Run(runtime.Runner{
+	if err := runtime.Run(ctx, runtime.Runner{
 		Name:            "VoidEngine",
 		ShutdownTimeout: cfg.ShutdownTimeout(),
 		Run: func(context.Context) error {

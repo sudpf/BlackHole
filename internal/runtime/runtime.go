@@ -18,12 +18,15 @@ type Runner struct {
 	ShutdownTimeout time.Duration
 }
 
-func Run(r Runner) error {
+func Run(ctx context.Context, r Runner) error {
+	if ctx == nil {
+		return fmt.Errorf("context is required")
+	}
 	if r.Run == nil {
 		return fmt.Errorf("run function is required")
 	}
 
-	runCtx, cancelRun := context.WithCancel(context.Background())
+	runCtx, cancelRun := context.WithCancel(ctx)
 	defer cancelRun()
 
 	runDone := make(chan error, 1)
@@ -32,7 +35,7 @@ func Run(r Runner) error {
 		close(runDone)
 	}()
 
-	signalCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	signalCtx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
 	select {
@@ -47,10 +50,10 @@ func Run(r Runner) error {
 			log.Info("Shutting down application")
 		}
 
-		shutdownCtx := context.Background()
+		shutdownCtx := context.WithoutCancel(ctx)
 		var cancel context.CancelFunc
 		if r.ShutdownTimeout > 0 {
-			shutdownCtx, cancel = context.WithTimeout(context.Background(), r.ShutdownTimeout)
+			shutdownCtx, cancel = context.WithTimeout(shutdownCtx, r.ShutdownTimeout)
 			defer cancel()
 		}
 

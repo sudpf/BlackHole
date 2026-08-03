@@ -4,6 +4,7 @@ import (
 	"BlackHole/internal/stash/app"
 	"BlackHole/internal/stash/config"
 	"BlackHole/pkg/logger"
+	"context"
 	"flag"
 	"fmt"
 	"os"
@@ -34,7 +35,7 @@ func run() error {
 
 	log.Info(cfg.String())
 
-	if err := app.Run(cfg); err != nil {
+	if err := app.Run(context.Background(), cfg); err != nil {
 		return fmt.Errorf("run Stash: %w", err)
 	}
 

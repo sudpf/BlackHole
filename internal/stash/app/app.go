@@ -8,13 +8,13 @@ import (
 	"fmt"
 )
 
-func Run(cfg *appconfig.Config) error {
+func Run(ctx context.Context, cfg *appconfig.Config) error {
 	stash, err := service.New(cfg)
 	if err != nil {
 		return fmt.Errorf("initialize service: %w", err)
 	}
 
-	if err := runtime.Run(runtime.Runner{
+	if err := runtime.Run(ctx, runtime.Runner{
 		Name:            "Stash",
 		ShutdownTimeout: cfg.ShutdownTimeout(),
 		Run: func(context.Context) error {
