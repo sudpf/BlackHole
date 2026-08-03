@@ -82,35 +82,13 @@ func (m *MySQLDatabase) CreateDatabase() error {
 	return err
 }
 
-func (m *MySQLDatabase) Query(ctx context.Context, model interface{}, conditions map[string]interface{}) (*gorm.DB, error) {
-	pageNo, okPageNo := conditions["PageNo"].(int)
-	pageSize, okPageSize := conditions["PageSize"].(int)
-	order, okOrder := conditions["OrderBy"].(string)
-
-	delete(conditions, "PageNo")
-	delete(conditions, "PageSize")
-	delete(conditions, "OrderBy")
-
-	db := m.DB.WithContext(ctx).Where(conditions)
-	if okPageNo && okPageSize {
-		db = db.Offset((pageNo - 1) * pageSize).Limit(pageSize)
-	}
-
-	if okOrder {
-		if order == "desc" {
-			db = db.Order("id DESC")
-		} else {
-			db = db.Order("id ASC")
-		}
-	}
-
-	db = db.Find(model)
-
-	return db, db.Error
+func (m *MySQLDatabase) Query(ctx context.Context, model interface{}, conditions map[string]interface{}, options *QueryOptions) (*gorm.DB, error) {
+	query := applyQueryOptions(m.DB.WithContext(ctx).Where(conditions), options).Find(model)
+	return query, query.Error
 }
 
-func (m *MySQLDatabase) QueryEx(ctx context.Context, model interface{}, conditions interface{}) (*gorm.DB, error) {
-	query := m.DB.WithContext(ctx).Where(conditions).Find(model)
+func (m *MySQLDatabase) QueryEx(ctx context.Context, model interface{}, conditions interface{}, options *QueryOptions) (*gorm.DB, error) {
+	query := applyQueryOptions(m.DB.WithContext(ctx).Where(conditions), options).Find(model)
 	return query, query.Error
 }
 

@@ -79,18 +79,18 @@ func (s *SQLiteDatabase) CreateDatabase() error {
 	return nil
 }
 
-func (s *SQLiteDatabase) Query(ctx context.Context, model interface{}, conditions map[string]interface{}) (*gorm.DB, error) {
-	query := s.DB.WithContext(ctx).Where(conditions).Find(model)
+func (s *SQLiteDatabase) Query(ctx context.Context, model interface{}, conditions map[string]interface{}, options *QueryOptions) (*gorm.DB, error) {
+	query := applyQueryOptions(s.DB.WithContext(ctx).Where(conditions), options).Find(model)
 	return query, query.Error
 }
 
-func (s *SQLiteDatabase) QueryEx(ctx context.Context, model interface{}, conditions interface{}) (*gorm.DB, error) {
+func (s *SQLiteDatabase) QueryEx(ctx context.Context, model interface{}, conditions interface{}, options *QueryOptions) (*gorm.DB, error) {
 	conditionMap, err := StructToConditions(conditions)
 	if err != nil {
 		return nil, err
 	}
 
-	query := s.DB.WithContext(ctx).Where(conditionMap).Find(model)
+	query := applyQueryOptions(s.DB.WithContext(ctx).Where(conditionMap), options).Find(model)
 	return query, query.Error
 }
 

@@ -10,15 +10,30 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"gorm.io/gorm/logger"
 )
+
+type OrderDirection string
+
+const (
+	OrderAsc  OrderDirection = "asc"
+	OrderDesc OrderDirection = "desc"
+)
+
+type QueryOptions struct {
+	PageNo      int
+	PageSize    int
+	OrderColumn string
+	Order       OrderDirection
+}
 
 type Database interface {
 	Connect(connectionString string) (*gorm.DB, error)
 	Close() error
 	CreateTable(model ...interface{}) error
-	Query(ctx context.Context, model interface{}, conditions map[string]interface{}) (*gorm.DB, error)
-	QueryEx(ctx context.Context, model interface{}, conditions interface{}) (*gorm.DB, error)
+	Query(ctx context.Context, model interface{}, conditions map[string]interface{}, options *QueryOptions) (*gorm.DB, error)
+	QueryEx(ctx context.Context, model interface{}, conditions interface{}, options *QueryOptions) (*gorm.DB, error)
 	Insert(ctx context.Context, model interface{}) error
 	Update(ctx context.Context, model interface{}, conditions map[string]interface{}) error
 	Delete(ctx context.Context, model interface{}, conditions map[string]interface{}) error
@@ -98,6 +113,25 @@ func (f *CustomFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 		return nil, err
 	}
 	return append(message, '\n'), nil
+}
+
+func applyQueryOptions(query *gorm.DB, options *QueryOptions) *gorm.DB {
+	if options == nil {
+		return query
+	}
+
+	if options.PageNo > 0 && options.PageSize > 0 {
+		query = query.Offset((options.PageNo - 1) * options.PageSize).Limit(options.PageSize)
+	}
+
+	if options.OrderColumn != "" {
+		query = query.Order(clause.OrderByColumn{
+			Column: clause.Column{Name: options.OrderColumn},
+			Desc:   options.Order == OrderDesc,
+		})
+	}
+
+	return query
 }
 
 func StructToConditions(v interface{}) (map[string]interface{}, error) {

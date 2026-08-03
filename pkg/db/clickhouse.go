@@ -116,41 +116,18 @@ func (c *ClickHouseDatabase) CreateDatabase() error {
 	return nil
 }
 
-func (c *ClickHouseDatabase) Query(ctx context.Context, model interface{}, conditions map[string]interface{}) (*gorm.DB, error) {
-	pageNo, okPageNo := conditions["PageNo"].(int)
-	pageSize, okPageSize := conditions["PageSize"].(int)
-	order, okOrder := conditions["OrderBy"].(string)
-
-	delete(conditions, "PageNo")
-	delete(conditions, "PageSize")
-	delete(conditions, "OrderBy")
-
-	db := c.DB.WithContext(ctx).Where(conditions)
-	if okPageNo && okPageSize {
-		db = db.Offset((pageNo - 1) * pageSize).Limit(pageSize)
-		//fmt.Printf("%d %d", pageNo, pageSize)
-	}
-
-	if okOrder {
-		if order == "desc" {
-			db = db.Order("timestamp DESC")
-		} else {
-			db = db.Order("timestamp ASC")
-		}
-	}
-
-	db = db.Find(model)
-
-	return db, db.Error
+func (c *ClickHouseDatabase) Query(ctx context.Context, model interface{}, conditions map[string]interface{}, options *QueryOptions) (*gorm.DB, error) {
+	query := applyQueryOptions(c.DB.WithContext(ctx).Where(conditions), options).Find(model)
+	return query, query.Error
 }
 
-func (c *ClickHouseDatabase) QueryEx(ctx context.Context, model interface{}, conditions interface{}) (*gorm.DB, error) {
+func (c *ClickHouseDatabase) QueryEx(ctx context.Context, model interface{}, conditions interface{}, options *QueryOptions) (*gorm.DB, error) {
 	conditionMap, err := StructToConditions(conditions)
 	if err != nil {
 		return nil, err
 	}
 
-	query := c.DB.WithContext(ctx).Where(conditionMap).Find(model)
+	query := applyQueryOptions(c.DB.WithContext(ctx).Where(conditionMap), options).Find(model)
 	return query, query.Error
 }
 

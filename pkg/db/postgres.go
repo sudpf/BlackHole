@@ -86,18 +86,18 @@ func (p *PostgreSQLDatabase) CreateDatabase() error {
 	return err
 }
 
-func (p *PostgreSQLDatabase) Query(ctx context.Context, model interface{}, conditions map[string]interface{}) (*gorm.DB, error) {
-	query := p.DB.WithContext(ctx).Where(conditions).Find(model)
+func (p *PostgreSQLDatabase) Query(ctx context.Context, model interface{}, conditions map[string]interface{}, options *QueryOptions) (*gorm.DB, error) {
+	query := applyQueryOptions(p.DB.WithContext(ctx).Where(conditions), options).Find(model)
 	return query, query.Error
 }
 
-func (p *PostgreSQLDatabase) QueryEx(ctx context.Context, model interface{}, conditions interface{}) (*gorm.DB, error) {
+func (p *PostgreSQLDatabase) QueryEx(ctx context.Context, model interface{}, conditions interface{}, options *QueryOptions) (*gorm.DB, error) {
 	conditionMap, err := StructToConditions(conditions)
 	if err != nil {
 		return nil, err
 	}
 
-	query := p.DB.WithContext(ctx).Where(conditionMap).Find(model)
+	query := applyQueryOptions(p.DB.WithContext(ctx).Where(conditionMap), options).Find(model)
 	return query, query.Error
 }
 
