@@ -75,11 +75,19 @@ func newUniversalTranslator() *ut.UniversalTranslator {
 	return ut.New(enT, zhT, enT)
 }
 
-func InitValidatorTranslations(provider *Provider) error {
-	if provider == nil {
+func (p *Provider) Initialize(requiredMessageIDs []string) error {
+	if p == nil {
 		return fmt.Errorf("env provider is required")
 	}
 
+	if err := p.validateMessages(requiredMessageIDs); err != nil {
+		return err
+	}
+
+	return p.initValidatorTranslations()
+}
+
+func (p *Provider) initValidatorTranslations() error {
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		v.RegisterTagNameFunc(func(fld reflect.StructField) string {
 			name, _, _ := strings.Cut(fld.Tag.Get("json"), ",")
@@ -89,7 +97,7 @@ func InitValidatorTranslations(provider *Provider) error {
 			return name
 		})
 
-		transEn, ok := provider.uni.GetTranslator(constant.LangEnglish)
+		transEn, ok := p.uni.GetTranslator(constant.LangEnglish)
 		if !ok {
 			return fmt.Errorf("uni.GetTranslator(%s) failed", constant.LangEnglish)
 		}
@@ -97,7 +105,7 @@ func InitValidatorTranslations(provider *Provider) error {
 			return err
 		}
 
-		transZh, ok := provider.uni.GetTranslator(constant.LangChinese)
+		transZh, ok := p.uni.GetTranslator(constant.LangChinese)
 		if !ok {
 			return fmt.Errorf("uni.GetTranslator(%s) failed", constant.LangChinese)
 		}
@@ -165,7 +173,7 @@ func (p *Provider) NewEnvFromContext(ctx context.Context) *Env {
 	return env
 }
 
-func (p *Provider) ValidateMessages(messageIDs []string) error {
+func (p *Provider) validateMessages(messageIDs []string) error {
 	for _, id := range messageIDs {
 		if _, exists := p.messageIDs[id]; !exists {
 			return fmt.Errorf("message %q is not defined", id)

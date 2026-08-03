@@ -13,7 +13,7 @@ import (
 
 type Runner struct {
 	Name            string
-	Run             func() error
+	Run             func(context.Context) error
 	Shutdown        func(context.Context) error
 	ShutdownTimeout time.Duration
 }
@@ -23,9 +23,12 @@ func Run(r Runner) error {
 		return fmt.Errorf("run function is required")
 	}
 
+	runCtx, cancelRun := context.WithCancel(context.Background())
+	defer cancelRun()
+
 	runDone := make(chan error, 1)
 	go func() {
-		runDone <- r.Run()
+		runDone <- r.Run(runCtx)
 		close(runDone)
 	}()
 
@@ -36,6 +39,8 @@ func Run(r Runner) error {
 	case runErr := <-runDone:
 		return runErr
 	case <-signalCtx.Done():
+		cancelRun()
+
 		if r.Name != "" {
 			log.Infof("Shutting down %s", r.Name)
 		} else {

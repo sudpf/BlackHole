@@ -38,7 +38,7 @@ func Run(cfg *appconfig.Config) (err error) {
 	if err := runtime.Run(runtime.Runner{
 		Name:            "VoidEngine",
 		ShutdownTimeout: cfg.ShutdownTimeout(),
-		Run: func() error {
+		Run: func(context.Context) error {
 			if serveErr := server.ListenAndServe(); serveErr != nil && !errors.Is(serveErr, http.ErrServerClosed) {
 				return fmt.Errorf("run OpenAPI: listen and serve: %w", serveErr)
 			}

@@ -15,8 +15,9 @@ func Run(cfg *appconfig.Config) error {
 	}
 
 	if err := runtime.Run(runtime.Runner{
-		Name: "Stash",
-		Run: func() error {
+		Name:            "Stash",
+		ShutdownTimeout: cfg.ShutdownTimeout(),
+		Run: func(context.Context) error {
 			if err := stash.Run(); err != nil {
 				return fmt.Errorf("run service: %w", err)
 			}

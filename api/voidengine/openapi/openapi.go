@@ -16,16 +16,14 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-
 	log "github.com/sirupsen/logrus"
 )
 
 type Server struct {
-	address      string
-	router       *gin.Engine
-	routes       map[string][]router.Route
-	envProvider  *env.Provider
-	errorCatalog *apperror.Catalog
+	address     string
+	router      *gin.Engine
+	routes      map[string][]router.Route
+	envProvider *env.Provider
 }
 
 func NewHTTPServer(address, apiLogFile string, apiLogSize string, requestTimeout time.Duration) (*Server, error) {
@@ -33,24 +31,20 @@ func NewHTTPServer(address, apiLogFile string, apiLogSize string, requestTimeout
 	if err != nil {
 		return nil, fmt.Errorf("initialize env provider: %w", err)
 	}
-	if err = env.InitValidatorTranslations(envProvider); err != nil {
-		return nil, fmt.Errorf("initialize validator translations: %w", err)
-	}
 
 	errorCatalog, err := newErrorCatalog()
 	if err != nil {
 		return nil, fmt.Errorf("initialize error catalog: %w", err)
 	}
-	if err := envProvider.ValidateMessages(errorCatalog.MessageIDs()); err != nil {
-		return nil, fmt.Errorf("validate error messages: %w", err)
+	if err = envProvider.Initialize(errorCatalog.MessageIDs()); err != nil {
+		return nil, fmt.Errorf("initialize env provider: %w", err)
 	}
 
 	server := &Server{
-		address:      address,
-		router:       gin.New(),
-		routes:       make(map[string][]router.Route),
-		envProvider:  envProvider,
-		errorCatalog: errorCatalog,
+		address:     address,
+		router:      gin.New(),
+		routes:      make(map[string][]router.Route),
+		envProvider: envProvider,
 	}
 
 	if err := middleware.ApiLogMiddlewares(server.router, apiLogFile, apiLogSize); err != nil {
@@ -59,7 +53,6 @@ func NewHTTPServer(address, apiLogFile string, apiLogSize string, requestTimeout
 	server.router.Use(middleware.ErrorHandler(envProvider, errorCatalog, errorcode.SystemError))
 	server.router.Use(middleware.Recovery(errorcode.SystemError))
 	server.router.Use(middleware.RequestContext(requestTimeout))
-
 	server.router.NoRoute(func(c *gin.Context) {
 		_ = c.Error(apperror.New(errorcode.APINotFound))
 		c.Abort()
@@ -108,6 +101,14 @@ func (s *Server) HTTPServer() *http.Server {
 	}
 }
 
+func (s *Server) RegisterRoutes(group string, routes []router.Route) {
+	s.routes[group] = append(s.routes[group], routes...)
+}
+
+func (s *Server) Wrap(handler wrapper.HandlerFunc) gin.HandlerFunc {
+	return wrapper.Adapt(s.envProvider, handler)
+}
+
 func swaggerHost(address string) string {
 	host, port, err := net.SplitHostPort(address)
 	if err != nil {
@@ -120,12 +121,4 @@ func swaggerHost(address string) string {
 	}
 
 	return net.JoinHostPort(host, port)
-}
-
-func (s *Server) RegisterRoutes(group string, routes []router.Route) {
-	s.routes[group] = append(s.routes[group], routes...)
-}
-
-func (s *Server) Wrap(handler wrapper.HandlerFunc) gin.HandlerFunc {
-	return wrapper.Adapt(s.envProvider, handler)
 }

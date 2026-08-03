@@ -51,8 +51,23 @@ func TestNewProviderRejectsIncompleteMessages(t *testing.T) {
 	}
 }
 
-func TestInitValidatorTranslationsRejectsNilProvider(t *testing.T) {
-	if err := InitValidatorTranslations(nil); err == nil {
-		t.Fatal("InitValidatorTranslations expected nil provider error")
+func TestProviderInitializeRejectsNilProvider(t *testing.T) {
+	var provider *Provider
+	if err := provider.Initialize(nil); err == nil {
+		t.Fatal("Initialize expected nil provider error")
+	}
+}
+
+func TestProviderInitializeRejectsUndefinedMessage(t *testing.T) {
+	provider, err := NewProvider(
+		map[string]string{"hello": "hello"},
+		map[string]string{"hello": "你好"},
+	)
+	if err != nil {
+		t.Fatalf("NewProvider error = %v", err)
+	}
+
+	if err := provider.Initialize([]string{"missing"}); err == nil {
+		t.Fatal("Initialize expected missing message error")
 	}
 }

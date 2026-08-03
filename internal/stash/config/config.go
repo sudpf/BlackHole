@@ -183,6 +183,10 @@ func (c *Config) LogDir() string {
 	return c.Log.Dir
 }
 
+func (c *Config) ShutdownTimeout() time.Duration {
+	return c.App.ShutdownTimeout
+}
+
 func validate(cfg *Config) error {
 	if cfg == nil {
 		return fmt.Errorf("stash config is required")
