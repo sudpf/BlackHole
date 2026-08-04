@@ -9,7 +9,10 @@ import (
 )
 
 func Run(ctx context.Context, cfg *appconfig.Config) error {
-	stash, err := service.New(cfg)
+	if ctx == nil {
+		return fmt.Errorf("context is required")
+	}
+	stash, err := service.New(ctx, cfg)
 	if err != nil {
 		return fmt.Errorf("initialize service: %w", err)
 	}
@@ -17,14 +20,14 @@ func Run(ctx context.Context, cfg *appconfig.Config) error {
 	if err := runtime.Run(ctx, runtime.Runner{
 		Name:            "Stash",
 		ShutdownTimeout: cfg.ShutdownTimeout(),
-		Run: func(context.Context) error {
-			if err := stash.Run(); err != nil {
+		Run: func(ctx context.Context) error {
+			if err := stash.Run(ctx); err != nil {
 				return fmt.Errorf("run service: %w", err)
 			}
 			return nil
 		},
-		Shutdown: func(context.Context) error {
-			if err := stash.Stop(); err != nil {
+		Shutdown: func(ctx context.Context) error {
+			if err := stash.Stop(ctx); err != nil {
 				return fmt.Errorf("stop service: %w", err)
 			}
 			return nil

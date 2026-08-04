@@ -52,7 +52,7 @@ func NewIndex(client *elastic.Client, indexFormat string, loc *time.Location) *I
 	}
 }
 
-func (idx *Index) GetIndex(m map[string]interface{}) string {
+func (idx *Index) GetIndex(ctx context.Context, m map[string]interface{}) string {
 	index := idx.indexFormat(m)
 	idx.lock.RLock()
 	if _, ok := idx.indices[index]; ok {
@@ -61,13 +61,13 @@ func (idx *Index) GetIndex(m map[string]interface{}) string {
 	}
 
 	idx.lock.RUnlock()
-	if err := idx.ensureIndex(index); err != nil {
+	if err := idx.ensureIndex(ctx, index); err != nil {
 		logx.Error(err)
 	}
 	return index
 }
 
-func (idx *Index) ensureIndex(index string) error {
+func (idx *Index) ensureIndex(ctx context.Context, index string) error {
 	_, err := idx.singleFlight.Do(index, func() (i interface{}, err error) {
 		idx.lock.Lock()
 		defer idx.lock.Unlock()
@@ -84,7 +84,7 @@ func (idx *Index) ensureIndex(index string) error {
 
 		existsService := elastic.NewIndicesExistsService(idx.client)
 		existsService.Index([]string{index})
-		exist, err := existsService.Do(context.Background())
+		exist, err := existsService.Do(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -95,7 +95,7 @@ func (idx *Index) ensureIndex(index string) error {
 		createService := idx.client.CreateIndex(index)
 		if err := fx.DoWithRetry(func() error {
 			// is it necessary to check the result?
-			_, err := createService.Do(context.Background())
+			_, err := createService.Do(ctx)
 			return err
 		}); err != nil {
 			return nil, err

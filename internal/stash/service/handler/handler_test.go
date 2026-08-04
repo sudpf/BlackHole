@@ -11,11 +11,11 @@ type testWriter struct {
 	closed   bool
 }
 
-func (w *testWriter) Write(map[string]interface{}) error {
+func (w *testWriter) Write(context.Context, map[string]interface{}) error {
 	return w.writeErr
 }
 
-func (w *testWriter) Close() error {
+func (w *testWriter) Close(context.Context) error {
 	w.closed = true
 	return nil
 }
@@ -37,7 +37,7 @@ func TestCloseClosesAllWriters(t *testing.T) {
 	handler := NewHandler()
 	handler.AddWriters(first, second)
 
-	if err := handler.Close(); err != nil {
+	if err := handler.Close(context.Background()); err != nil {
 		t.Fatalf("Close() error = %v", err)
 	}
 	if !first.closed || !second.closed {

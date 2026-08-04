@@ -6,6 +6,7 @@ import (
 	"BlackHole/internal/stash/service/handler"
 	"BlackHole/internal/stash/service/input"
 	"BlackHole/internal/stash/service/output"
+	"context"
 	"errors"
 	"fmt"
 
@@ -19,7 +20,10 @@ type Stash struct {
 	handlers []*handler.MessageHandler
 }
 
-func New(cfg *config.Config) (_ *Stash, err error) {
+func New(ctx context.Context, cfg *config.Config) (_ *Stash, err error) {
+	if ctx == nil {
+		return nil, fmt.Errorf("context is required")
+	}
 	if cfg == nil {
 		return nil, fmt.Errorf("config is nil")
 	}
@@ -35,7 +39,7 @@ func New(cfg *config.Config) (_ *Stash, err error) {
 			svc.Stop()
 		}
 		for _, handle := range stash.handlers {
-			_ = handle.Close()
+			_ = handle.Close(ctx)
 		}
 	}()
 
@@ -49,7 +53,7 @@ func New(cfg *config.Config) (_ *Stash, err error) {
 
 		filters := filter.CreateFilters(cluster)
 
-		writers, err := output.NewWriters(cluster.Output)
+		writers, err := output.NewWriters(ctx, cluster.Output)
 		if err != nil {
 			return nil, fmt.Errorf("initialize cluster %d writers: %w", i, err)
 		}
@@ -75,7 +79,7 @@ func New(cfg *config.Config) (_ *Stash, err error) {
 				if s == nil {
 					return nil, fmt.Errorf("cluster %d syslog input %d is nil", i, j)
 				}
-				syslogService, err := input.NewSyslogService(s, handle)
+				syslogService, err := input.NewSyslogService(ctx, s, handle)
 				if err != nil {
 					return nil, fmt.Errorf("initialize cluster %d syslog input %d: %w", i, j, err)
 				}
@@ -88,7 +92,13 @@ func New(cfg *config.Config) (_ *Stash, err error) {
 	return stash, nil
 }
 
-func (s *Stash) Run() error {
+func (s *Stash) Run(ctx context.Context) error {
+	if ctx == nil {
+		return fmt.Errorf("context is required")
+	}
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	if s == nil || s.group == nil {
 		return fmt.Errorf("service group not initialized")
 	}
@@ -97,7 +107,10 @@ func (s *Stash) Run() error {
 	return nil
 }
 
-func (s *Stash) Stop() error {
+func (s *Stash) Stop(ctx context.Context) error {
+	if ctx == nil {
+		return fmt.Errorf("context is required")
+	}
 	if s == nil || s.group == nil {
 		return nil
 	}
@@ -106,7 +119,7 @@ func (s *Stash) Stop() error {
 
 	var err error
 	for _, handle := range s.handlers {
-		err = errors.Join(err, handle.Close())
+		err = errors.Join(err, handle.Close(ctx))
 	}
 
 	return err

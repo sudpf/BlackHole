@@ -23,6 +23,7 @@ type (
 	}
 
 	SyslogService struct {
+		ctx              context.Context
 		conf             *config.SyslogServiceConf
 		server           *syslog.Server
 		channel          handler.LogPartsChannel
@@ -32,7 +33,10 @@ type (
 	}
 )
 
-func NewSyslogService(c *config.SyslogServiceConf, cHandler ConsumeHandler) (*SyslogService, error) {
+func NewSyslogService(ctx context.Context, c *config.SyslogServiceConf, cHandler ConsumeHandler) (*SyslogService, error) {
+	if ctx == nil {
+		return nil, fmt.Errorf("context is required")
+	}
 	channel := make(handler.LogPartsChannel, 10000)
 	syslogHandler := handler.NewChannelHandler(channel)
 
@@ -72,6 +76,7 @@ func NewSyslogService(c *config.SyslogServiceConf, cHandler ConsumeHandler) (*Sy
 	}
 
 	return &SyslogService{
+		ctx:              ctx,
 		conf:             c,
 		server:           server,
 		channel:          channel,
@@ -84,15 +89,20 @@ func (s *SyslogService) Start() {
 	for i := 0; i < s.conf.Processors; i++ {
 		s.consumerRoutines.Run(func() {
 			log.Infof("Start syslog process [%d]", i+1)
-			ctx := context.TODO()
 			for logParts := range s.channel {
+				select {
+				case <-s.ctx.Done():
+					log.Infof("Routine Run Over")
+					return
+				default:
+				}
 				logMap, err := jsoniter.MarshalToString(logParts)
 				if err != nil {
 					log.Warnf("Marshal error:%v parts[%v]", err, logParts)
 					continue
 				}
 
-				if err := s.handler.Consume(ctx, strconv.FormatUint(1, 10), logMap); err != nil {
+				if err := s.handler.Consume(s.ctx, strconv.FormatUint(1, 10), logMap); err != nil {
 					log.Warnf("Consume log err:%v", err)
 				}
 			}

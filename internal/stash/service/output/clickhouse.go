@@ -41,7 +41,7 @@ type (
 	}
 )
 
-func NewClickHouseWriter(c *config.ClickHouseConf) (*ChWriter, error) {
+func NewClickHouseWriter(ctx context.Context, c *config.ClickHouseConf) (*ChWriter, error) {
 	client, err := clickhouse.Open(&clickhouse.Options{
 		Addr: c.Addr,
 		Auth: clickhouse.Auth{
@@ -63,7 +63,7 @@ func NewClickHouseWriter(c *config.ClickHouseConf) (*ChWriter, error) {
 
 	writer := ChWriter{
 		client:         client,
-		ctx:            context.Background(),
+		ctx:            ctx,
 		database:       c.Auth.Database,
 		table:          c.Table,
 		query:          query,
@@ -73,7 +73,7 @@ func NewClickHouseWriter(c *config.ClickHouseConf) (*ChWriter, error) {
 	writer.inserter = executors.NewChunkExecutor(writer.execute, executors.WithChunkBytes(c.MaxChunkBytes), executors.WithFlushInterval(time.Duration(c.Interval)*time.Second))
 
 	for i := 0; i < 30; i++ {
-		if err := writer.clickhouseColumns(); err == nil {
+		if err := writer.clickhouseColumns(ctx); err == nil {
 			return &writer, nil
 		}
 		log.Warnf("Init clickhouseColumns error: %v", err)
@@ -83,10 +83,10 @@ func NewClickHouseWriter(c *config.ClickHouseConf) (*ChWriter, error) {
 	return nil, fmt.Errorf("Init clickhouseColumns error")
 }
 
-func (w *ChWriter) clickhouseTableDesc() ([]*ClickHouseDescType, error) {
+func (w *ChWriter) clickhouseTableDesc(ctx context.Context) ([]*ClickHouseDescType, error) {
 	var descTypes []*ClickHouseDescType
 
-	rows, err := w.client.Query(w.ctx, "DESC "+w.database+"."+w.table)
+	rows, err := w.client.Query(ctx, "DESC "+w.database+"."+w.table)
 	if err != nil {
 		return nil, err
 	}
@@ -104,8 +104,8 @@ func (w *ChWriter) clickhouseTableDesc() ([]*ClickHouseDescType, error) {
 	return descTypes, nil
 }
 
-func (w *ChWriter) clickhouseColumns() error {
-	descTypes, err := w.clickhouseTableDesc()
+func (w *ChWriter) clickhouseColumns(ctx context.Context) error {
+	descTypes, err := w.clickhouseTableDesc(ctx)
 	if err != nil {
 		return err
 	}
@@ -133,9 +133,12 @@ func (w *ChWriter) clickhouseColumns() error {
 	return nil
 }
 
-func (w *ChWriter) Write(val map[string]interface{}) error {
+func (w *ChWriter) Write(ctx context.Context, val map[string]interface{}) error {
 	if w == nil {
 		return errors.New("invalid writer")
+	}
+	if err := ctx.Err(); err != nil {
+		return err
 	}
 
 	v, err := w.PrepareData(val)
@@ -149,7 +152,7 @@ func (w *ChWriter) Write(val map[string]interface{}) error {
 	}, len(val))
 }
 
-func (w *ChWriter) Close() error {
+func (w *ChWriter) Close(ctx context.Context) error {
 	if w == nil {
 		return nil
 	}

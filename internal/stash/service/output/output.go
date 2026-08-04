@@ -2,21 +2,25 @@ package output
 
 import (
 	"BlackHole/internal/stash/config"
+	"context"
 	"errors"
 	"fmt"
 )
 
 type (
 	Writer interface {
-		Write(val map[string]interface{}) error
-		Close() error
+		Write(ctx context.Context, val map[string]interface{}) error
+		Close(ctx context.Context) error
 	}
 )
 
-func NewWriters(o *config.OutputConf) ([]Writer, error) {
+func NewWriters(ctx context.Context, o *config.OutputConf) ([]Writer, error) {
+	if ctx == nil {
+		return nil, fmt.Errorf("context is required")
+	}
 	var writers []Writer
 	closeWriters := func() {
-		_ = CloseWriters(writers)
+		_ = CloseWriters(ctx, writers)
 	}
 
 	if o == nil {
@@ -24,7 +28,7 @@ func NewWriters(o *config.OutputConf) ([]Writer, error) {
 	}
 
 	if o.ElasticSearch != nil {
-		writer, err := NewElasticSearchWriter(o.ElasticSearch)
+		writer, err := NewElasticSearchWriter(ctx, o.ElasticSearch)
 		if err != nil {
 			closeWriters()
 			return nil, fmt.Errorf("initialize elasticsearch writer: %w", err)
@@ -33,7 +37,7 @@ func NewWriters(o *config.OutputConf) ([]Writer, error) {
 	}
 
 	if o.Clickhouse != nil && len(o.Clickhouse.Addr) > 0 {
-		writer, err := NewClickHouseWriter(o.Clickhouse)
+		writer, err := NewClickHouseWriter(ctx, o.Clickhouse)
 		if err != nil {
 			closeWriters()
 			return nil, fmt.Errorf("initialize clickhouse writer: %w", err)
@@ -43,7 +47,7 @@ func NewWriters(o *config.OutputConf) ([]Writer, error) {
 
 	if len(o.Syslogs) > 0 {
 		for i, syslog := range o.Syslogs {
-			writer, err := NewSyslogWriter(syslog)
+			writer, err := NewSyslogWriter(ctx, syslog)
 			if err != nil {
 				closeWriters()
 				return nil, fmt.Errorf("initialize syslog writer %d: %w", i, err)
@@ -55,10 +59,10 @@ func NewWriters(o *config.OutputConf) ([]Writer, error) {
 	return writers, nil
 }
 
-func CloseWriters(writers []Writer) error {
+func CloseWriters(ctx context.Context, writers []Writer) error {
 	var err error
 	for _, writer := range writers {
-		err = errors.Join(err, writer.Close())
+		err = errors.Join(err, writer.Close(ctx))
 	}
 
 	return err

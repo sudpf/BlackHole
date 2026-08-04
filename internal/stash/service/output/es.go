@@ -18,6 +18,7 @@ const es8Version = "8.0.0"
 
 type (
 	EsWriter struct {
+		ctx       context.Context
 		docType   string
 		esVersion string
 		client    *elastic.Client
@@ -31,7 +32,7 @@ type (
 	}
 )
 
-func NewElasticSearchWriter(c *config.ElasticSearchConf) (*EsWriter, error) {
+func NewElasticSearchWriter(ctx context.Context, c *config.ElasticSearchConf) (*EsWriter, error) {
 	client, err := elastic.NewClient(
 		elastic.SetSniff(false),
 		elastic.SetURL(c.Hosts...),
@@ -49,6 +50,7 @@ func NewElasticSearchWriter(c *config.ElasticSearchConf) (*EsWriter, error) {
 	}
 
 	writer := EsWriter{
+		ctx:       ctx,
 		docType:   c.DocType,
 		client:    client,
 		esVersion: version,
@@ -69,8 +71,11 @@ func NewElasticSearchWriter(c *config.ElasticSearchConf) (*EsWriter, error) {
 	return &writer, nil
 }
 
-func (w *EsWriter) Write(val map[string]interface{}) error {
-	index := w.indexer.GetIndex(val)
+func (w *EsWriter) Write(ctx context.Context, val map[string]interface{}) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	index := w.indexer.GetIndex(ctx, val)
 
 	bs, err := jsoniter.Marshal(val)
 	if err != nil {
@@ -83,7 +88,7 @@ func (w *EsWriter) Write(val map[string]interface{}) error {
 	}, len(string(bs)))
 }
 
-func (w *EsWriter) Close() error {
+func (w *EsWriter) Close(ctx context.Context) error {
 	if w == nil {
 		return nil
 	}
@@ -105,7 +110,7 @@ func (w *EsWriter) execute(vals []interface{}) {
 		req = req.Doc(pair.val)
 		bulk.Add(req)
 	}
-	resp, err := bulk.Do(context.Background())
+	resp, err := bulk.Do(w.ctx)
 	if err != nil {
 		logx.Error(err)
 		return

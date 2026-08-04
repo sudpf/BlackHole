@@ -3,6 +3,7 @@ package output
 import (
 	"BlackHole/internal/stash/config"
 	"BlackHole/internal/stash/service/filter"
+	"context"
 	"errors"
 	"fmt"
 	"log/syslog"
@@ -27,13 +28,13 @@ type (
 	}
 )
 
-func NewSyslogWriter(c *config.SyslogOutputConf) (*SyslogWriter, error) {
+func NewSyslogWriter(ctx context.Context, c *config.SyslogOutputConf) (*SyslogWriter, error) {
 	w := &SyslogWriter{}
 	if c == nil {
 		return w, nil
 	}
 	closeWriter := func() {
-		_ = w.Close()
+		_ = w.Close(ctx)
 	}
 
 	for i, cSyslogAddr := range c.SyslogAddrs {
@@ -77,7 +78,11 @@ func (w *SyslogWriter) PrepareData(columns []string, val map[string]interface{})
 	return result, nil
 }
 
-func (w *SyslogWriter) Write(val map[string]interface{}) error {
+func (w *SyslogWriter) Write(ctx context.Context, val map[string]interface{}) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
 	filterMatch := false
 	if len(w.Filters) > 0 {
 		for _, filter := range w.Filters {
@@ -132,7 +137,7 @@ func (w *SyslogWriter) Write(val map[string]interface{}) error {
 	return writeErr
 }
 
-func (w *SyslogWriter) Close() error {
+func (w *SyslogWriter) Close(ctx context.Context) error {
 	var err error
 	for _, writeConf := range w.WriteConfs {
 		if writeConf.logger != nil {

@@ -28,15 +28,15 @@ func (mh *MessageHandler) AddFilters(filters ...filter.FilterFunc) {
 	mh.filters = append(mh.filters, filters...)
 }
 
-func (mh *MessageHandler) Close() error {
-	if err := output.CloseWriters(mh.writers); err != nil {
+func (mh *MessageHandler) Close(ctx context.Context) error {
+	if err := output.CloseWriters(ctx, mh.writers); err != nil {
 		return fmt.Errorf("close message writers: %w", err)
 	}
 
 	return nil
 }
 
-func (mh *MessageHandler) Consume(_ context.Context, _, val string) error {
+func (mh *MessageHandler) Consume(ctx context.Context, _, val string) error {
 	var m map[string]interface{}
 	if err := jsoniter.Unmarshal([]byte(val), &m); err != nil {
 		return err
@@ -50,7 +50,7 @@ func (mh *MessageHandler) Consume(_ context.Context, _, val string) error {
 
 	var writeErr error
 	for _, mWriter := range mh.writers {
-		if err := mWriter.Write(m); err != nil {
+		if err := mWriter.Write(ctx, m); err != nil {
 			log.Warnf("write log error:%v", err)
 			writeErr = errors.Join(writeErr, err)
 		}
