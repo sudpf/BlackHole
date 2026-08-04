@@ -197,28 +197,23 @@ paths:
         in: header
         name: Accept-Language
         type: string
-      - description: 排序方式[desc, asc]
-        example: desc
+      - default: 1
+        description: 当前页码
         in: query
-        maxLength: 4
-        name: orderBy
-        type: string
-      - description: 当前页码
-        example: 1
-        in: query
-        minimum: 1
         name: pageNo
         type: integer
-      - description: 每页数量
-        example: 50
+      - default: 50
+        description: 每页数量
         in: query
-        maximum: 100
-        minimum: 1
         name: pageSize
         type: integer
+      - default: desc
+        description: 排序方式[desc, asc]
+        in: query
+        name: orderBy
+        type: string
       - description: 用户名
         in: query
-        maxLength: 32
         name: username
         type: string
       produces:

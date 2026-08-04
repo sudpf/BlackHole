@@ -156,32 +156,27 @@ const docTemplate = `{
                         "in": "header"
                     },
                     {
-                        "maxLength": 4,
-                        "type": "string",
-                        "example": "desc",
-                        "description": "排序方式[desc, asc]",
-                        "name": "orderBy",
-                        "in": "query"
-                    },
-                    {
-                        "minimum": 1,
                         "type": "integer",
-                        "example": 1,
+                        "default": 1,
                         "description": "当前页码",
                         "name": "pageNo",
                         "in": "query"
                     },
                     {
-                        "maximum": 100,
-                        "minimum": 1,
                         "type": "integer",
-                        "example": 50,
+                        "default": 50,
                         "description": "每页数量",
                         "name": "pageSize",
                         "in": "query"
                     },
                     {
-                        "maxLength": 32,
+                        "type": "string",
+                        "default": "desc",
+                        "description": "排序方式[desc, asc]",
+                        "name": "orderBy",
+                        "in": "query"
+                    },
+                    {
                         "type": "string",
                         "description": "用户名",
                         "name": "username",

@@ -16,7 +16,10 @@ import (
 // @Accept json
 // @Produce json
 // @Param Accept-Language header string false "Language" default(zh)
-// @param user query message.ListUserRequest true "list user param"
+// @Param pageNo query int false "当前页码" default(1)
+// @Param pageSize query int false "每页数量" default(50)
+// @Param orderBy query string false "排序方式[desc, asc]" default(desc)
+// @Param username query string false "用户名"
 // @Success 200 {object} response.ApiResponse
 // @Failure 400 {object} response.ApiResponse
 // @Router /v1/user [get]
