@@ -37,6 +37,9 @@ func (l localRoute) Path() string {
 func NewRoute(method, path string, handler gin.HandlerFunc, opts ...RouteWrapper) Route {
 	var r Route = localRoute{method, path, handler}
 	for _, o := range opts {
+		if o == nil {
+			continue
+		}
 		r = o(r)
 	}
 	return r

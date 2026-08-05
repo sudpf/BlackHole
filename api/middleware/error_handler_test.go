@@ -3,7 +3,6 @@ package middleware
 import (
 	"BlackHole/api/common/response"
 	"BlackHole/pkg/apperror"
-	"BlackHole/pkg/env"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -105,40 +104,18 @@ func TestErrorHandlerRecoversPanic(t *testing.T) {
 func newErrorTestRouter(t *testing.T) *gin.Engine {
 	t.Helper()
 
-	provider, err := env.NewProvider(
-		map[string]string{
-			"error_0":      "Success",
-			"error_2":      "Invalid parameters",
-			"error_3":      "System error",
-			"error_100002": "User {{.username}} does not exist",
-		},
-		map[string]string{
-			"error_0":      "成功",
-			"error_2":      "参数错误",
-			"error_3":      "系统错误",
-			"error_100002": "用户 {{.username}} 不存在",
-		},
-	)
-	if err != nil {
-		t.Fatalf("NewProvider error = %v", err)
-	}
-
 	catalog, err := apperror.NewCatalog(
-		apperror.Definition{Code: apperror.Success, HTTPStatus: http.StatusOK},
-		apperror.Definition{Code: testInvalidParams, HTTPStatus: http.StatusBadRequest},
-		apperror.Definition{Code: testSystemError, HTTPStatus: http.StatusInternalServerError},
-		apperror.Definition{Code: testUserNotFound, HTTPStatus: http.StatusNotFound},
+		apperror.Definition{Code: apperror.Success, HTTPStatus: http.StatusOK, English: "Success", Chinese: "成功"},
+		apperror.Definition{Code: testInvalidParams, HTTPStatus: http.StatusBadRequest, English: "Invalid parameters", Chinese: "参数错误"},
+		apperror.Definition{Code: testSystemError, HTTPStatus: http.StatusInternalServerError, English: "System error", Chinese: "系统错误"},
+		apperror.Definition{Code: testUserNotFound, HTTPStatus: http.StatusNotFound, English: "User {{.username}} does not exist", Chinese: "用户 {{.username}} 不存在"},
 	)
 	if err != nil {
 		t.Fatalf("NewCatalog error = %v", err)
 	}
-	if err = provider.Initialize(catalog.MessageIDs()); err != nil {
-		t.Fatalf("Initialize provider error = %v", err)
-	}
-
 	router := gin.New()
-	router.Use(ErrorHandler(provider, catalog, testSystemError))
-	router.Use(Recovery(testSystemError))
+	router.Use(ErrorHandler(catalog))
+	router.Use(Recovery())
 	router.Use(RequestContext(time.Second))
 	return router
 }

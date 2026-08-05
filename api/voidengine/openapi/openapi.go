@@ -7,9 +7,7 @@ import (
 	"BlackHole/api/wrapper"
 	"BlackHole/docs/api/voidengine"
 	"BlackHole/internal/voidengine/errorcode"
-	"BlackHole/internal/voidengine/locales"
 	"BlackHole/pkg/apperror"
-	"BlackHole/pkg/env"
 	"fmt"
 	"net"
 	"net/http"
@@ -20,38 +18,30 @@ import (
 )
 
 type Server struct {
-	address     string
-	router      *gin.Engine
-	routes      map[string][]router.Route
-	envProvider *env.Provider
+	address      string
+	router       *gin.Engine
+	routes       map[string][]router.Route
+	errorCatalog *apperror.Catalog
 }
 
 func NewHTTPServer(address, apiLogFile string, apiLogSize string, requestTimeout time.Duration) (*Server, error) {
-	envProvider, err := env.NewProvider(locales.English(), locales.Chinese())
-	if err != nil {
-		return nil, fmt.Errorf("initialize env provider: %w", err)
-	}
-
-	errorCatalog, err := newErrorCatalog()
+	errorCatalog, err := apperror.NewCatalog(errorcode.Definitions...)
 	if err != nil {
 		return nil, fmt.Errorf("initialize error catalog: %w", err)
 	}
-	if err = envProvider.Initialize(errorCatalog.MessageIDs()); err != nil {
-		return nil, fmt.Errorf("initialize env provider: %w", err)
-	}
 
 	server := &Server{
-		address:     address,
-		router:      gin.New(),
-		routes:      make(map[string][]router.Route),
-		envProvider: envProvider,
+		address:      address,
+		router:       gin.New(),
+		routes:       make(map[string][]router.Route),
+		errorCatalog: errorCatalog,
 	}
 
 	if err := middleware.ApiLogMiddlewares(server.router, apiLogFile, apiLogSize); err != nil {
 		return nil, err
 	}
-	server.router.Use(middleware.ErrorHandler(envProvider, errorCatalog, errorcode.SystemError))
-	server.router.Use(middleware.Recovery(errorcode.SystemError))
+	server.router.Use(middleware.ErrorHandler(errorCatalog))
+	server.router.Use(middleware.Recovery())
 	server.router.Use(middleware.RequestContext(requestTimeout))
 	server.router.NoRoute(func(c *gin.Context) {
 		_ = c.Error(apperror.New(errorcode.APINotFound))
@@ -106,7 +96,7 @@ func (s *Server) RegisterRoutes(group string, routes []router.Route) {
 }
 
 func (s *Server) Wrap(handler wrapper.HandlerFunc) gin.HandlerFunc {
-	return wrapper.Adapt(s.envProvider, handler)
+	return wrapper.Adapt(s.errorCatalog, handler)
 }
 
 func swaggerHost(address string) string {

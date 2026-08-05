@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"BlackHole/pkg/constant"
+	"BlackHole/pkg/env"
 	"BlackHole/pkg/requestctx"
 	"context"
 	"fmt"
@@ -36,6 +37,7 @@ func RequestContext(timeout time.Duration) gin.HandlerFunc {
 			Language: language,
 			ClientIP: c.ClientIP(),
 		})
+		ctx = env.WithContext(ctx, env.NewFromContext(ctx))
 		c.Request = c.Request.WithContext(ctx)
 		c.Header(requestctx.HeaderTraceID, traceID)
 

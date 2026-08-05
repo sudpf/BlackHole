@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"BlackHole/api/common/response"
+	"BlackHole/internal/voidengine/errorcode"
 	"BlackHole/pkg/apperror"
 	"BlackHole/pkg/env"
 	"BlackHole/pkg/logger"
@@ -10,75 +11,69 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func ErrorHandler(provider *env.Provider, catalog *apperror.Catalog, systemCode apperror.Code) gin.HandlerFunc {
+func ErrorHandler(catalog *apperror.Catalog) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Next()
 
 		if len(c.Errors) == 0 {
 			return
 		}
-		writeError(c, provider, catalog, systemCode, c.Errors.Last().Err)
-	}
-}
+		err := c.Errors.Last().Err
+		appErr, known := apperror.As(err)
+		if !known {
+			appErr = apperror.Wrap(errorcode.SystemError, err)
+		}
 
-func writeError(
-	c *gin.Context,
-	provider *env.Provider,
-	catalog *apperror.Catalog,
-	systemCode apperror.Code,
-	err error,
-) {
-	appErr, known := apperror.As(err)
-	if !known {
-		appErr = apperror.Wrap(systemCode, err)
-	}
-
-	definition, exists := catalog.Lookup(appErr.Code())
-	if !exists {
-		appErr = apperror.Wrap(systemCode, err)
-		definition, exists = catalog.Lookup(systemCode)
+		definition, exists := catalog.Lookup(appErr.Code())
 		if !exists {
+			appErr = apperror.Wrap(errorcode.SystemError, err)
+			definition, exists = catalog.Lookup(errorcode.SystemError)
+			if !exists {
+				logger.FromContext(c.Request.Context()).
+					WithField("code", errorcode.SystemError).
+					Error("system error code is not registered")
+				c.AbortWithStatus(http.StatusInternalServerError)
+				return
+			}
+		}
+
+		if definition.HTTPStatus >= 500 {
 			logger.FromContext(c.Request.Context()).
-				WithField("code", systemCode).
-				Error("system error code is not registered")
-			c.AbortWithStatus(http.StatusInternalServerError)
+				WithError(err).
+				WithField("code", appErr.Code()).
+				Error("handle API request")
+		}
+
+		if c.Writer.Written() {
 			return
 		}
-	}
 
-	if definition.HTTPStatus >= 500 {
-		logger.FromContext(c.Request.Context()).
-			WithError(err).
-			WithField("code", appErr.Code()).
-			Error("handle API request")
-	}
-
-	if c.Writer.Written() {
-		return
-	}
-
-	requestEnv := provider.NewEnvFromContext(c.Request.Context())
-	message, localizeErr := requestEnv.Localize(apperror.MessageID(appErr.Code()), appErr.Params())
-	if localizeErr != nil {
-		logger.FromContext(c.Request.Context()).
-			WithError(localizeErr).
-			WithField("code", appErr.Code()).
-			Error("localize API error")
-
-		appErr = apperror.Wrap(systemCode, err)
-		definition, _ = catalog.Lookup(systemCode)
-		message, localizeErr = requestEnv.Localize(apperror.MessageID(systemCode), nil)
+		requestEnv, ok := env.FromContext(c.Request.Context())
+		if !ok {
+			requestEnv = env.NewFromContext(c.Request.Context())
+		}
+		message, localizeErr := catalog.Localize(requestEnv, apperror.MessageID(appErr.Code()), appErr.Params())
 		if localizeErr != nil {
-			logger.FromContext(c.Request.Context()).WithError(localizeErr).Error("localize system error")
-			c.AbortWithStatus(http.StatusInternalServerError)
-			return
+			logger.FromContext(c.Request.Context()).
+				WithError(localizeErr).
+				WithField("code", appErr.Code()).
+				Error("localize API error")
+
+			appErr = apperror.Wrap(errorcode.SystemError, err)
+			definition, _ = catalog.Lookup(errorcode.SystemError)
+			message, localizeErr = catalog.Localize(requestEnv, apperror.MessageID(errorcode.SystemError), nil)
+			if localizeErr != nil {
+				logger.FromContext(c.Request.Context()).WithError(localizeErr).Error("localize system error")
+				c.AbortWithStatus(http.StatusInternalServerError)
+				return
+			}
 		}
-	}
 
-	details := appErr.Details()
-	if details == nil {
-		details = requestEnv.TranslateErrors(appErr.Unwrap())
-	}
+		details := appErr.Details()
+		if details == nil {
+			details = catalog.TranslateErrors(requestEnv, appErr.Unwrap())
+		}
 
-	response.WriteError(c, definition.HTTPStatus, appErr.Code(), message, details)
+		response.WriteError(c, definition.HTTPStatus, appErr.Code(), message, details)
+	}
 }

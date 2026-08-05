@@ -10,7 +10,7 @@ import (
 
 type HandlerFunc func(*gin.Context) (response.Result, error)
 
-func Adapt(provider *env.Provider, handler HandlerFunc) gin.HandlerFunc {
+func Adapt(catalog *apperror.Catalog, handler HandlerFunc) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		result, err := handler(c)
 		if err != nil {
@@ -19,8 +19,11 @@ func Adapt(provider *env.Provider, handler HandlerFunc) gin.HandlerFunc {
 			return
 		}
 
-		requestEnv := provider.NewEnvFromContext(c.Request.Context())
-		message, err := requestEnv.Localize(apperror.MessageID(apperror.Success), nil)
+		requestEnv, ok := env.FromContext(c.Request.Context())
+		if !ok {
+			requestEnv = env.NewFromContext(c.Request.Context())
+		}
+		message, err := catalog.Localize(requestEnv, apperror.MessageID(apperror.Success), nil)
 		if err != nil {
 			_ = c.Error(err)
 			c.Abort()

@@ -27,8 +27,8 @@ func TestErrorPreservesCodeAndCause(t *testing.T) {
 
 func TestNewCatalogRejectsDuplicateCode(t *testing.T) {
 	_, err := NewCatalog(
-		Definition{Code: Success, HTTPStatus: http.StatusOK},
-		Definition{Code: Success, HTTPStatus: http.StatusCreated},
+		Definition{Code: Success, HTTPStatus: http.StatusOK, English: "Success", Chinese: "成功"},
+		Definition{Code: Success, HTTPStatus: http.StatusCreated, English: "Created", Chinese: "创建"},
 	)
 	if err == nil {
 		t.Fatal("NewCatalog expected duplicate code error")
@@ -37,9 +37,9 @@ func TestNewCatalogRejectsDuplicateCode(t *testing.T) {
 
 func TestCatalogMessageIDsAreSorted(t *testing.T) {
 	catalog, err := NewCatalog(
-		Definition{Code: 100001, HTTPStatus: http.StatusNotFound},
-		Definition{Code: Success, HTTPStatus: http.StatusOK},
-		Definition{Code: 2, HTTPStatus: http.StatusBadRequest},
+		Definition{Code: 100001, HTTPStatus: http.StatusNotFound, English: "User not found", Chinese: "用户不存在"},
+		Definition{Code: Success, HTTPStatus: http.StatusOK, English: "Success", Chinese: "成功"},
+		Definition{Code: 2, HTTPStatus: http.StatusInternalServerError, English: "System error", Chinese: "系统错误"},
 	)
 	if err != nil {
 		t.Fatalf("NewCatalog error = %v", err)

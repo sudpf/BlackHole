@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"BlackHole/pkg/env"
 	"BlackHole/pkg/requestctx"
 	"context"
 	"net/http"
@@ -34,6 +35,16 @@ func TestRequestContextDetachesClientCancellation(t *testing.T) {
 		}
 		if got := c.Writer.Header().Get(requestctx.HeaderTraceID); got != traceID {
 			t.Errorf("response trace ID = %q, want %s", got, traceID)
+		}
+		requestEnv, ok := env.FromContext(ctx)
+		if !ok {
+			t.Fatal("env is missing from context")
+		}
+		if requestEnv.RequestId != traceID {
+			t.Errorf("env request ID = %q, want %s", requestEnv.RequestId, traceID)
+		}
+		if requestEnv.Lang != "zh" {
+			t.Errorf("env language = %q, want zh", requestEnv.Lang)
 		}
 	})
 

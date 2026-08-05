@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"BlackHole/internal/voidengine/errorcode"
 	"BlackHole/pkg/apperror"
 	"BlackHole/pkg/logger"
 	"fmt"
@@ -9,7 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func Recovery(systemCode apperror.Code) gin.HandlerFunc {
+func Recovery() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		defer func() {
 			if recovered := recover(); recovered != nil {
@@ -19,7 +20,7 @@ func Recovery(systemCode apperror.Code) gin.HandlerFunc {
 					WithField("stack", string(debug.Stack())).
 					Error("panic recovered")
 
-				_ = c.Error(apperror.Wrap(systemCode, err))
+				_ = c.Error(apperror.Wrap(errorcode.SystemError, err))
 				c.Abort()
 			}
 		}()
