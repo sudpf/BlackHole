@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -15,6 +16,7 @@ import (
 
 func InitLog(level string, output string, size string) error {
 	log.SetFormatter(JSONFormatter())
+	log.SetReportCaller(true)
 
 	//set default level
 	log.SetLevel(log.InfoLevel)
@@ -51,13 +53,23 @@ func InitLog(level string, output string, size string) error {
 }
 
 func JSONFormatter() log.Formatter {
+	workingDir, _ := os.Getwd()
+
 	return &log.JSONFormatter{
 		TimestampFormat: "2006-01-02T15:04:05.000Z07:00",
 		FieldMap: log.FieldMap{
 			log.FieldKeyTime:  "time",
 			log.FieldKeyLevel: "level",
 			log.FieldKeyMsg:   "message",
-			log.FieldKeyFunc:  "caller",
+		},
+		CallerPrettyfier: func(frame *runtime.Frame) (string, string) {
+			file := frame.File
+			if workingDir != "" {
+				if relativePath, err := filepath.Rel(workingDir, frame.File); err == nil {
+					file = relativePath
+				}
+			}
+			return "", fmt.Sprintf("%s:%d", file, frame.Line)
 		},
 	}
 }
@@ -66,12 +78,6 @@ func FromContext(ctx context.Context) *log.Entry {
 	entry := log.WithContext(ctx)
 	if traceID := requestctx.TraceID(ctx); traceID != "" {
 		entry = entry.WithField("trace_id", traceID)
-	}
-	if clientIP := requestctx.ClientIP(ctx); clientIP != "" {
-		entry = entry.WithField("client_ip", clientIP)
-	}
-	if language := requestctx.Language(ctx); language != "" {
-		entry = entry.WithField("language", language)
 	}
 	return entry
 }

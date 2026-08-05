@@ -27,7 +27,6 @@ func ApiLogMiddlewares(router *gin.Engine, logFile string, logSize string) error
 			"status":     param.StatusCode,
 			"latency_ms": float64(param.Latency.Microseconds()) / 1000,
 			"user_agent": param.Request.UserAgent(),
-			"error":      param.ErrorMessage,
 		}
 
 		message, err := json.Marshal(fields)
