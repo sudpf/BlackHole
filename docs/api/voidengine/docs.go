@@ -97,7 +97,6 @@ const docTemplate = `{
                         "maxLength": 4,
                         "type": "string",
                         "example": "desc",
-                        "description": "排序方式[desc, asc]",
                         "name": "orderBy",
                         "in": "query"
                     },
@@ -105,7 +104,6 @@ const docTemplate = `{
                         "minimum": 1,
                         "type": "integer",
                         "example": 1,
-                        "description": "当前页码",
                         "name": "pageNo",
                         "in": "query"
                     },
@@ -114,7 +112,6 @@ const docTemplate = `{
                         "minimum": 1,
                         "type": "integer",
                         "example": 50,
-                        "description": "每页数量",
                         "name": "pageSize",
                         "in": "query"
                     }
@@ -123,7 +120,22 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/response.ApiResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.ApiResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/contract.ListNetworkTrafficResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -187,7 +199,22 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/response.ApiResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.ApiResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/contract.ListUserResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -223,7 +250,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/message.ModifyUserRequest"
+                            "$ref": "#/definitions/contract.ModifyUserRequest"
                         }
                     }
                 ],
@@ -267,7 +294,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/message.AddUserRequest"
+                            "$ref": "#/definitions/contract.AddUserRequest"
                         }
                     }
                 ],
@@ -311,7 +338,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/message.DeleteUserRequest"
+                            "$ref": "#/definitions/contract.DeleteUserRequest"
                         }
                     }
                 ],
@@ -333,7 +360,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "message.AddUserRequest": {
+        "contract.AddUserRequest": {
             "type": "object",
             "required": [
                 "password",
@@ -347,7 +374,6 @@ const docTemplate = `{
                     "minLength": 5
                 },
                 "password": {
-                    "description": "密码",
                     "type": "string",
                     "maxLength": 20,
                     "minLength": 8
@@ -363,26 +389,73 @@ const docTemplate = `{
                     "minLength": 8
                 },
                 "username": {
-                    "description": "用户名",
                     "type": "string",
                     "maxLength": 32
                 }
             }
         },
-        "message.DeleteUserRequest": {
+        "contract.DeleteUserRequest": {
             "type": "object",
             "required": [
                 "username"
             ],
             "properties": {
                 "username": {
-                    "description": "用户名",
                     "type": "string",
                     "maxLength": 32
                 }
             }
         },
-        "message.ModifyUserRequest": {
+        "contract.ListNetworkTrafficResponse": {
+            "type": "object",
+            "properties": {
+                "bytesIn": {
+                    "type": "integer"
+                },
+                "bytesOut": {
+                    "type": "integer"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "destinationIp": {
+                    "type": "string"
+                },
+                "destinationPort": {
+                    "type": "integer"
+                },
+                "packetCount": {
+                    "type": "integer"
+                },
+                "protocol": {
+                    "type": "string"
+                },
+                "sourceIp": {
+                    "type": "string"
+                },
+                "sourcePort": {
+                    "type": "integer"
+                },
+                "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
+        "contract.ListUserResponse": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "contract.ModifyUserRequest": {
             "type": "object",
             "required": [
                 "username"
@@ -394,7 +467,6 @@ const docTemplate = `{
                     "minLength": 5
                 },
                 "password": {
-                    "description": "密码",
                     "type": "string",
                     "maxLength": 20,
                     "minLength": 8
@@ -410,7 +482,6 @@ const docTemplate = `{
                     "minLength": 8
                 },
                 "username": {
-                    "description": "用户名",
                     "type": "string",
                     "maxLength": 32
                 }

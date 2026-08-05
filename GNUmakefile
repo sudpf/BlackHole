@@ -73,7 +73,7 @@ tools:
 
 swagger-generator: fmt vendor
 	GOOS=${GOOS} GOARCH=${GOARCH} go build ${GFLAGS} -o bin/swagger-generator cmd/swagger-generator/main.go
-	./bin/swagger-generator -source=./api/voidengine/openapi/doc.go -search=./api/voidengine/openapi,./api/common/response -output=./docs/api/voidengine
+	./bin/swagger-generator -source=./api/voidengine/openapi/doc.go -search=./api/voidengine/openapi,./api/common/response,./internal/voidengine/contract -output=./docs/api/voidengine
 
 stash: fmt vendor
 	GOOS=${GOOS} GOARCH=${GOARCH} go build ${GFLAGS} -o bin/stash cmd/stash/main.go

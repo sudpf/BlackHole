@@ -2,14 +2,13 @@ basePath: 这里写base path
 consumes:
 - application/json
 definitions:
-  message.AddUserRequest:
+  contract.AddUserRequest:
     properties:
       email:
         maxLength: 100
         minLength: 5
         type: string
       password:
-        description: 密码
         maxLength: 20
         minLength: 8
         type: string
@@ -22,7 +21,6 @@ definitions:
         minLength: 8
         type: string
       username:
-        description: 用户名
         maxLength: 32
         type: string
     required:
@@ -30,23 +28,53 @@ definitions:
     - rePassword
     - username
     type: object
-  message.DeleteUserRequest:
+  contract.DeleteUserRequest:
     properties:
       username:
-        description: 用户名
         maxLength: 32
         type: string
     required:
     - username
     type: object
-  message.ModifyUserRequest:
+  contract.ListNetworkTrafficResponse:
+    properties:
+      bytesIn:
+        type: integer
+      bytesOut:
+        type: integer
+      description:
+        type: string
+      destinationIp:
+        type: string
+      destinationPort:
+        type: integer
+      packetCount:
+        type: integer
+      protocol:
+        type: string
+      sourceIp:
+        type: string
+      sourcePort:
+        type: integer
+      timestamp:
+        type: string
+    type: object
+  contract.ListUserResponse:
+    properties:
+      email:
+        type: string
+      phone:
+        type: string
+      username:
+        type: string
+    type: object
+  contract.ModifyUserRequest:
     properties:
       email:
         maxLength: 100
         minLength: 5
         type: string
       password:
-        description: 密码
         maxLength: 20
         minLength: 8
         type: string
@@ -59,7 +87,6 @@ definitions:
         minLength: 8
         type: string
       username:
-        description: 用户名
         maxLength: 32
         type: string
     required:
@@ -125,20 +152,17 @@ paths:
         in: header
         name: Accept-Language
         type: string
-      - description: 排序方式[desc, asc]
-        example: desc
+      - example: desc
         in: query
         maxLength: 4
         name: orderBy
         type: string
-      - description: 当前页码
-        example: 1
+      - example: 1
         in: query
         minimum: 1
         name: pageNo
         type: integer
-      - description: 每页数量
-        example: 50
+      - example: 50
         in: query
         maximum: 100
         minimum: 1
@@ -150,7 +174,14 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/response.ApiResponse'
+            allOf:
+            - $ref: '#/definitions/response.ApiResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/contract.ListNetworkTrafficResponse'
+                  type: array
+              type: object
         "400":
           description: Bad Request
           schema:
@@ -173,7 +204,7 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/message.DeleteUserRequest'
+          $ref: '#/definitions/contract.DeleteUserRequest'
       produces:
       - application/json
       responses:
@@ -222,7 +253,14 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/response.ApiResponse'
+            allOf:
+            - $ref: '#/definitions/response.ApiResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/contract.ListUserResponse'
+                  type: array
+              type: object
         "400":
           description: Bad Request
           schema:
@@ -244,7 +282,7 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/message.AddUserRequest'
+          $ref: '#/definitions/contract.AddUserRequest'
       produces:
       - application/json
       responses:
@@ -273,7 +311,7 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/message.ModifyUserRequest'
+          $ref: '#/definitions/contract.ModifyUserRequest'
       produces:
       - application/json
       responses:
