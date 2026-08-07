@@ -4,6 +4,7 @@ import (
 	"BlackHole/internal/runtime/configpath"
 	"bytes"
 	"fmt"
+	"net/url"
 	"path/filepath"
 	"strings"
 	"time"
@@ -19,12 +20,10 @@ type Config struct {
 	Clusters    []*ClusterConf `yaml:"clusters" json:"clusters"`
 	GracePeriod time.Duration  `yaml:"grace_period" json:"grace_period,default=10s"`
 	appLogFile  string
-	apiLogFile  string
 }
 
 type appConfig struct {
-	ListenHttp      string        `toml:"listen_http" yaml:"listen_http" json:"listen_http,default=127.0.0.1:80"`
-	ListenHttps     string        `toml:"listen_https" yaml:"listen_https" json:"listen_https,optional"`
+	Listen          string        `toml:"listen" yaml:"listen" json:"listen,default=http://127.0.0.1:80"`
 	RequestTimeout  time.Duration `toml:"request_timeout" yaml:"request_timeout" json:"request_timeout,default=30s"`
 	ShutdownTimeout time.Duration `toml:"shutdown_timeout" yaml:"shutdown_timeout" json:"shutdown_timeout,default=10s"`
 }
@@ -33,7 +32,6 @@ type logConfig struct {
 	Level string `toml:"level" yaml:"level" json:"level,default=info"`
 	Size  string `toml:"size" yaml:"size" json:"size,default=256m"`
 	Dir   string `toml:"dir" yaml:"dir" json:"dir,default=logs"`
-	Gin   string `toml:"gin" yaml:"gin" json:"gin,optional"`
 }
 
 type ConditionConf struct {
@@ -150,7 +148,6 @@ func Load(file string) (*Config, error) {
 	}
 
 	cfg.appLogFile = filepath.Join(cfg.LogDir(), appName+".log")
-	cfg.apiLogFile = filepath.Join(cfg.LogDir(), appName+"api.log")
 	return cfg, nil
 }
 
@@ -165,10 +162,6 @@ func (c *Config) String() string {
 
 func (c *Config) AppLogFile() string {
 	return c.appLogFile
-}
-
-func (c *Config) ApiLogFile() string {
-	return c.apiLogFile
 }
 
 func (c *Config) LogLevel() string {
@@ -191,8 +184,12 @@ func validate(cfg *Config) error {
 	if cfg == nil {
 		return fmt.Errorf("stash config is required")
 	}
-	if strings.TrimSpace(cfg.App.ListenHttp) == "" {
-		return fmt.Errorf("app.listen_http is required")
+	listenURL, err := url.Parse(strings.TrimSpace(cfg.App.Listen))
+	if err != nil || listenURL.Scheme == "" || listenURL.Host == "" {
+		return fmt.Errorf("app.listen must be a valid URL")
+	}
+	if listenURL.Scheme != "http" {
+		return fmt.Errorf("app.listen only supports http scheme")
 	}
 	if cfg.App.RequestTimeout <= 0 {
 		return fmt.Errorf("app.request_timeout must be positive")

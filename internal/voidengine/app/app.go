@@ -28,7 +28,7 @@ func Run(ctx context.Context, cfg *appconfig.Config) (err error) {
 	services := service.New(models)
 	handlers := v1handler.New(services)
 
-	listenAddress := cfg.ListenHTTP()
+	listenAddress := cfg.ListenAddress()
 	apiServer, err := openapi.NewHTTPServer(listenAddress, cfg.ApiLogFile(), cfg.LogSize(), cfg.RequestTimeout())
 	if err != nil {
 		return fmt.Errorf("initialize OpenAPI server: %w", err)

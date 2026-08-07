@@ -1,6 +1,5 @@
 [app]
-    listen_http = ":80"
-    listen_https = ":443"
+    listen = "http://0.0.0.0:80"
     request_timeout = "8s"
     shutdown_timeout = "10s"
 
