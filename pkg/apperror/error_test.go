@@ -25,6 +25,56 @@ func TestErrorPreservesCodeAndCause(t *testing.T) {
 	}
 }
 
+func TestErrorParamsAreDeepCopied(t *testing.T) {
+	params := Params{
+		"user": map[string]any{
+			"name": "alice",
+			"tags": []string{"owner"},
+			"roles": []any{
+				"admin",
+				map[string]any{"scope": "read"},
+			},
+		},
+	}
+	err := NewWithParams(100001, params)
+
+	params["user"].(map[string]any)["name"] = "bob"
+	params["user"].(map[string]any)["tags"].([]string)[0] = "guest"
+	params["user"].(map[string]any)["roles"].([]any)[1].(map[string]any)["scope"] = "write"
+
+	got := err.Params()
+	user := got["user"].(map[string]any)
+	tags := user["tags"].([]string)
+	roles := user["roles"].([]any)
+	if user["name"] != "alice" {
+		t.Fatalf("stored name = %v, want alice", user["name"])
+	}
+	if tags[0] != "owner" {
+		t.Fatalf("stored tag = %v, want owner", tags[0])
+	}
+	if roles[1].(map[string]any)["scope"] != "read" {
+		t.Fatalf("stored scope = %v, want read", roles[1].(map[string]any)["scope"])
+	}
+
+	user["name"] = "charlie"
+	tags[0] = "operator"
+	roles[1].(map[string]any)["scope"] = "delete"
+
+	got = err.Params()
+	user = got["user"].(map[string]any)
+	tags = user["tags"].([]string)
+	roles = user["roles"].([]any)
+	if user["name"] != "alice" {
+		t.Fatalf("returned params mutated stored name = %v, want alice", user["name"])
+	}
+	if tags[0] != "owner" {
+		t.Fatalf("returned params mutated stored tag = %v, want owner", tags[0])
+	}
+	if roles[1].(map[string]any)["scope"] != "read" {
+		t.Fatalf("returned params mutated stored scope = %v, want read", roles[1].(map[string]any)["scope"])
+	}
+}
+
 func TestNewCatalogRejectsDuplicateCode(t *testing.T) {
 	_, err := NewCatalog(
 		Definition{Code: Success, HTTPStatus: http.StatusOK, English: "Success", Chinese: "成功"},

@@ -3,6 +3,8 @@ package apperror
 import (
 	"errors"
 	"fmt"
+
+	"github.com/mohae/deepcopy"
 )
 
 type Code int
@@ -43,10 +45,14 @@ func WrapWithDetails(code Code, cause error, details any) *Error {
 }
 
 func newError(code Code, cause error, params Params, details any) *Error {
+	if params != nil {
+		params = deepcopy.Copy(params).(Params)
+	}
+
 	return &Error{
 		code:    code,
 		cause:   cause,
-		params:  cloneMap(params),
+		params:  params,
 		details: details,
 	}
 }
@@ -82,10 +88,10 @@ func (e *Error) Code() Code {
 }
 
 func (e *Error) Params() Params {
-	if e == nil {
+	if e == nil || e.params == nil {
 		return nil
 	}
-	return cloneMap(e.params)
+	return deepcopy.Copy(e.params).(Params)
 }
 
 func (e *Error) Details() any {
@@ -93,16 +99,4 @@ func (e *Error) Details() any {
 		return nil
 	}
 	return e.details
-}
-
-func cloneMap(source Params) Params {
-	if source == nil {
-		return nil
-	}
-
-	cloned := make(Params, len(source))
-	for key, value := range source {
-		cloned[key] = value
-	}
-	return cloned
 }
