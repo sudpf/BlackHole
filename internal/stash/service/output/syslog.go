@@ -33,6 +33,7 @@ func NewSyslogWriter(ctx context.Context, c *config.SyslogOutputConf) (*SyslogWr
 	if c == nil {
 		return w, nil
 	}
+	w.Filters = createSyslogFilters(c.Conditions)
 	closeWriter := func() {
 		_ = w.Close(ctx)
 	}
@@ -61,6 +62,24 @@ func NewSyslogWriter(ctx context.Context, c *config.SyslogOutputConf) (*SyslogWr
 	}
 
 	return w, nil
+}
+
+func createSyslogFilters(conditions [][]*config.ConditionConf) []filter.FilterFunc {
+	filters := make([]filter.FilterFunc, 0, len(conditions))
+	for _, group := range conditions {
+		conds := make([]config.ConditionConf, 0, len(group))
+		for _, cond := range group {
+			if cond == nil {
+				continue
+			}
+			conds = append(conds, *cond)
+		}
+		if len(conds) == 0 {
+			continue
+		}
+		filters = append(filters, filter.DropFilter(conds))
+	}
+	return filters
 }
 
 func (w *SyslogWriter) PrepareData(columns []string, val map[string]interface{}) ([]interface{}, error) {
