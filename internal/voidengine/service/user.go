@@ -62,9 +62,14 @@ func (s *UserService) Add(ctx context.Context, request contract.AddUserRequest) 
 		return apperror.New(errorcode.SystemError)
 	}
 
+	hashedPassword, err := hashPassword(request.Password)
+	if err != nil {
+		return apperror.Wrap(errorcode.SystemError, err)
+	}
+
 	return s.dao.Create(ctx, &model.User{
 		Name:     request.Username,
-		Password: request.Password,
+		Password: hashedPassword,
 		Email:    request.Email,
 		Phone:    request.Phone,
 	})
@@ -86,7 +91,11 @@ func (s *UserService) Modify(ctx context.Context, request contract.ModifyUserReq
 	}
 
 	if request.Password != nil {
-		user.Password = *request.Password
+		hashedPassword, err := hashPassword(*request.Password)
+		if err != nil {
+			return apperror.Wrap(errorcode.SystemError, err)
+		}
+		user.Password = hashedPassword
 	}
 	if request.Email != nil {
 		user.Email = *request.Email
