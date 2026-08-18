@@ -55,7 +55,7 @@ func NewHTTPServer(address, apiLogFile string, apiLogSize string, requestTimeout
 	})
 
 	swagger.SwaggerGenerator(server.router)
-	voidengine.SwaggerInfo.Title = "VoidEngen"
+	voidengine.SwaggerInfo.Title = "VoidEngine"
 	voidengine.SwaggerInfo.Version = "v1"
 	voidengine.SwaggerInfo.Description = "API 文档"
 	voidengine.SwaggerInfo.Host = swaggerHost(address)
