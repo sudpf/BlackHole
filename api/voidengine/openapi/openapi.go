@@ -4,6 +4,7 @@ import (
 	"BlackHole/api/middleware"
 	"BlackHole/api/router"
 	"BlackHole/api/swagger"
+	"BlackHole/api/validation"
 	"BlackHole/api/wrapper"
 	"BlackHole/docs/api/voidengine"
 	"BlackHole/internal/voidengine/errorcode"
@@ -30,6 +31,11 @@ func NewHTTPServer(address, apiLogFile string, apiLogSize string, requestTimeout
 		return nil, fmt.Errorf("initialize error catalog: %w", err)
 	}
 
+	validationTranslator, err := validation.NewTranslator()
+	if err != nil {
+		return nil, fmt.Errorf("initialize validation translator: %w", err)
+	}
+
 	server := &Server{
 		address:      address,
 		router:       gin.New(),
@@ -40,7 +46,7 @@ func NewHTTPServer(address, apiLogFile string, apiLogSize string, requestTimeout
 	if err := middleware.ApiLogMiddlewares(server.router, apiLogFile, apiLogSize); err != nil {
 		return nil, err
 	}
-	server.router.Use(middleware.ErrorHandler(errorCatalog))
+	server.router.Use(middleware.ErrorHandler(errorCatalog, validationTranslator))
 	server.router.Use(middleware.Recovery())
 	server.router.Use(middleware.RequestContext(requestTimeout))
 	server.router.NoRoute(func(c *gin.Context) {

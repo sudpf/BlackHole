@@ -3,6 +3,7 @@ package openapi
 import (
 	"BlackHole/api/middleware"
 	"BlackHole/api/router"
+	"BlackHole/api/validation"
 	"BlackHole/internal/voidengine/errorcode"
 	"BlackHole/pkg/apperror"
 	"BlackHole/pkg/auth"
@@ -78,9 +79,13 @@ func newAuthTestEngine(t *testing.T) *gin.Engine {
 	if err != nil {
 		t.Fatalf("error catalog initialization error = %v", err)
 	}
+	translator, err := validation.NewTranslator()
+	if err != nil {
+		t.Fatalf("validation translator initialization error = %v", err)
+	}
 
 	engine := gin.New()
-	engine.Use(middleware.ErrorHandler(catalog))
+	engine.Use(middleware.ErrorHandler(catalog, translator))
 	engine.Use(middleware.RequestContext(time.Second))
 	engine.NoRoute(func(c *gin.Context) {
 		_ = c.Error(apperror.New(errorcode.APINotFound))

@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"BlackHole/api/common/response"
+	"BlackHole/api/validation"
 	"BlackHole/pkg/apperror"
 	"encoding/json"
 	"errors"
@@ -113,8 +114,12 @@ func newErrorTestRouter(t *testing.T) *gin.Engine {
 	if err != nil {
 		t.Fatalf("NewCatalog error = %v", err)
 	}
+	translator, err := validation.NewTranslator()
+	if err != nil {
+		t.Fatalf("NewTranslator error = %v", err)
+	}
 	router := gin.New()
-	router.Use(ErrorHandler(catalog))
+	router.Use(ErrorHandler(catalog, translator))
 	router.Use(Recovery())
 	router.Use(RequestContext(time.Second))
 	return router

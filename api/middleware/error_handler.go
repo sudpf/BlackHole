@@ -11,7 +11,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func ErrorHandler(catalog *apperror.Catalog) gin.HandlerFunc {
+type ValidationTranslator interface {
+	TranslateErrors(requestEnv *env.Env, err error) map[string]string
+}
+
+func ErrorHandler(catalog *apperror.Catalog, translator ValidationTranslator) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Next()
 
@@ -70,8 +74,8 @@ func ErrorHandler(catalog *apperror.Catalog) gin.HandlerFunc {
 		}
 
 		details := appErr.Details()
-		if details == nil {
-			details = catalog.TranslateErrors(requestEnv, appErr.Unwrap())
+		if details == nil && translator != nil {
+			details = translator.TranslateErrors(requestEnv, appErr.Unwrap())
 		}
 
 		response.WriteError(c, definition.HTTPStatus, appErr.Code(), message, details)
