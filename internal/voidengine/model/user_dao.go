@@ -3,6 +3,7 @@ package model
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"gorm.io/gorm"
 )
@@ -67,4 +68,36 @@ func (d *UserDAO) Update(ctx context.Context, username string, user *User) error
 
 func (d *UserDAO) DeleteByName(ctx context.Context, username string) error {
 	return d.db.WithContext(ctx).Where("name = ?", username).Delete(&User{}).Error
+}
+func IsDuplicateKeyError(err error) bool {
+	if err == nil {
+		return false
+	}
+	// MySQL unique key violation
+	msg := err.Error()
+	if strings.Contains(msg, "Error 1062") || strings.Contains(msg, "Duplicate entry") {
+		return true
+	}
+	// GORM-level duplicate key error, when driver exposes it
+	if errors.Is(err, gorm.ErrDuplicatedKey) {
+		return true
+	}
+	return false
+}
+
+func DuplicateKeyField(err error) string {
+	if !IsDuplicateKeyError(err) {
+		return ""
+	}
+	msg := err.Error()
+	// MySQL message often includes the key name after "for key "
+	if idx := strings.LastIndex(msg, "for key "); idx >= 0 {
+		rest := msg[idx+len("for key "):]
+		rest = strings.Trim(rest, "'` \n\t")
+		if strings.HasSuffix(rest, "''") {
+			rest = strings.TrimSuffix(rest, "''")
+		}
+		return rest
+	}
+	return ""
 }

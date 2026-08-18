@@ -67,12 +67,15 @@ func (s *UserService) Add(ctx context.Context, request contract.AddUserRequest) 
 		return apperror.Wrap(errorcode.SystemError, err)
 	}
 
-	return s.dao.Create(ctx, &model.User{
+	if err := s.dao.Create(ctx, &model.User{
 		Name:     request.Username,
 		Password: hashedPassword,
 		Email:    request.Email,
 		Phone:    request.Phone,
-	})
+	}); err != nil {
+		return mapCreateError(err)
+	}
+	return nil
 }
 
 func (s *UserService) Modify(ctx context.Context, request contract.ModifyUserRequest) error {
@@ -104,7 +107,10 @@ func (s *UserService) Modify(ctx context.Context, request contract.ModifyUserReq
 		user.Phone = *request.Phone
 	}
 
-	return s.dao.Update(ctx, request.Username, user)
+	if err := s.dao.Update(ctx, request.Username, user); err != nil {
+		return mapUpdateError(err)
+	}
+	return nil
 }
 
 func (s *UserService) Delete(ctx context.Context, request contract.DeleteUserRequest) error {
@@ -126,4 +132,34 @@ func (s *UserService) Delete(ctx context.Context, request contract.DeleteUserReq
 	}
 
 	return s.dao.DeleteByName(ctx, request.Username)
+}
+
+func mapCreateError(err error) error {
+	if model.IsDuplicateKeyError(err) {
+		field := model.DuplicateKeyField(err)
+		switch {
+		case field == "" || strings.Contains(strings.ToLower(field), "primary"):
+			return apperror.New(errorcode.UserAlreadyExists)
+		case strings.Contains(strings.ToLower(field), "email"):
+			return apperror.New(errorcode.EmailAlreadyExists)
+		case strings.Contains(strings.ToLower(field), "name") || strings.Contains(strings.ToLower(field), "user"):
+			return apperror.New(errorcode.UserAlreadyExists)
+		default:
+			return apperror.New(errorcode.DatabaseConflict)
+		}
+	}
+	return apperror.Wrap(errorcode.SystemError, err)
+}
+
+func mapUpdateError(err error) error {
+	if model.IsDuplicateKeyError(err) {
+		field := model.DuplicateKeyField(err)
+		switch {
+		case strings.Contains(strings.ToLower(field), "email"):
+			return apperror.New(errorcode.EmailAlreadyExists)
+		default:
+			return apperror.New(errorcode.DatabaseConflict)
+		}
+	}
+	return apperror.Wrap(errorcode.SystemError, err)
 }
