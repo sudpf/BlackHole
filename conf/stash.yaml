@@ -8,44 +8,27 @@ log:
   size: 256m
   dir: logs
 
+metrics:
+  enabled: true
+  listen: http://127.0.0.1:19102
+  path: /metrics
+
 clusters:
 - input:
     syslogs:
-    - protocol: Unixgram
-      address: /tmp/suricata_unix_sock
+    - protocol: Udp
+      address: 127.0.0.1
+      port: 1514
       processors: 2
   filters:
-  - action: drop
-    conditions:
-      - key: k8s_container_name
-        value: "-rpc"
-        type: contains
-      - key: level
-        value: info
-        type: match
-        op: and
-  - action: remove_field
-    fields:
-      - message
-      - _source
-      - _type
-      - _score
-      - _id
-      - "@version"
-      - topic
-      - index
-      - beat
-      - docker_container
-      - offset
-      - prospector
-      - source
-      - stream
   - action: transfer
     field: content
+  - action: transfer
+    field: message
   output:
     clickhouse:
       addr:
-      - 192.168.3.143:9000
+      - 127.0.0.1:9001
       auth:
         database: voidengine
         username: default
@@ -63,4 +46,4 @@ clusters:
       - packet_count
       - description
       interval: 1
-      max_chunk_bytes: 157286400
+      max_chunk_bytes: 15728640

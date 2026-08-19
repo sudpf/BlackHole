@@ -17,6 +17,7 @@ import (
 type Config struct {
 	App         appConfig      `yaml:"app" json:"app"`
 	Log         logConfig      `yaml:"log" json:"log"`
+	Metrics     metricsConfig  `yaml:"metrics" json:"metrics,optional"`
 	Clusters    []*ClusterConf `yaml:"clusters" json:"clusters"`
 	GracePeriod time.Duration  `yaml:"grace_period" json:"grace_period,default=10s"`
 	appLogFile  string
@@ -32,6 +33,12 @@ type logConfig struct {
 	Level string `toml:"level" yaml:"level" json:"level,default=info"`
 	Size  string `toml:"size" yaml:"size" json:"size,default=256m"`
 	Dir   string `toml:"dir" yaml:"dir" json:"dir,default=logs"`
+}
+
+type metricsConfig struct {
+	Enabled bool   `yaml:"enabled" json:"enabled,default=false"`
+	Listen  string `yaml:"listen" json:"listen,default=http://127.0.0.1:9102"`
+	Path    string `yaml:"path" json:"path,default=/metrics"`
 }
 
 type ConditionConf struct {
@@ -180,6 +187,19 @@ func (c *Config) ShutdownTimeout() time.Duration {
 	return c.App.ShutdownTimeout
 }
 
+func (c *Config) MetricsEnabled() bool {
+	return c.Metrics.Enabled
+}
+
+func (c *Config) MetricsListenAddress() string {
+	listenURL, _ := url.Parse(strings.TrimSpace(c.Metrics.Listen))
+	return listenURL.Host
+}
+
+func (c *Config) MetricsPath() string {
+	return c.Metrics.Path
+}
+
 func validate(cfg *Config) error {
 	if cfg == nil {
 		return fmt.Errorf("stash config is required")
@@ -208,6 +228,18 @@ func validate(cfg *Config) error {
 	}
 	if cfg.GracePeriod <= 0 {
 		return fmt.Errorf("grace_period must be positive")
+	}
+	if cfg.Metrics.Enabled {
+		metricsURL, err := url.Parse(strings.TrimSpace(cfg.Metrics.Listen))
+		if err != nil || metricsURL.Scheme == "" || metricsURL.Host == "" {
+			return fmt.Errorf("metrics.listen must be a valid URL")
+		}
+		if metricsURL.Scheme != "http" {
+			return fmt.Errorf("metrics.listen only supports http scheme")
+		}
+		if !strings.HasPrefix(cfg.Metrics.Path, "/") {
+			return fmt.Errorf("metrics.path must start with /")
+		}
 	}
 	return nil
 }

@@ -3,6 +3,7 @@ package output
 import (
 	"BlackHole/internal/stash/config"
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -100,6 +101,16 @@ func (w *EsWriter) Close(ctx context.Context) error {
 }
 
 func (w *EsWriter) execute(vals []interface{}) {
+	start := time.Now()
+	if err := w.executeBatch(vals); err != nil {
+		logx.Error(err)
+		recordBatchWrite("elasticsearch", "failure", len(vals), time.Since(start))
+		return
+	}
+	recordBatchWrite("elasticsearch", "success", len(vals), time.Since(start))
+}
+
+func (w *EsWriter) executeBatch(vals []interface{}) error {
 	var bulk = w.client.Bulk()
 	for _, val := range vals {
 		pair := val.(valueWithIndex)
@@ -112,15 +123,15 @@ func (w *EsWriter) execute(vals []interface{}) {
 	}
 	resp, err := bulk.Do(w.ctx)
 	if err != nil {
-		logx.Error(err)
-		return
+		return fmt.Errorf("bulk index: %w", err)
 	}
 
 	// bulk error in docs will report in response items
 	if !resp.Errors {
-		return
+		return nil
 	}
 
+	var batchErr error
 	for _, imap := range resp.Items {
 		for _, item := range imap {
 			if item.Error == nil {
@@ -128,11 +139,27 @@ func (w *EsWriter) execute(vals []interface{}) {
 			}
 
 			logx.Error(item.Error)
+			batchErr = errors.Join(batchErr, errorFromElasticDetails(item.Error))
 		}
 	}
+
+	if batchErr != nil {
+		return fmt.Errorf("bulk item errors: %w", batchErr)
+	}
+	return nil
 }
 
 func isSupportType(version string) bool {
 	// es8.x not support type field
 	return semver.Compare(version, es8Version) < 0
+}
+
+func errorFromElasticDetails(details *elastic.ErrorDetails) error {
+	if details == nil {
+		return nil
+	}
+	if details.Index != "" {
+		return fmt.Errorf("index %s: %s: %s", details.Index, details.Type, details.Reason)
+	}
+	return fmt.Errorf("%s: %s", details.Type, details.Reason)
 }

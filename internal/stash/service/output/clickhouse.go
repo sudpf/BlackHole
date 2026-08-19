@@ -187,25 +187,33 @@ func (w *ChWriter) PrepareData(val map[string]interface{}) ([]interface{}, error
 }
 
 func (w *ChWriter) execute(vals []interface{}) {
+	start := time.Now()
+	if err := w.executeBatch(vals); err != nil {
+		log.Warnf("ClickHouse batch write err: %v", err)
+		recordBatchWrite("clickhouse", "failure", len(vals), time.Since(start))
+		return
+	}
+	recordBatchWrite("clickhouse", "success", len(vals), time.Since(start))
+}
+
+func (w *ChWriter) executeBatch(vals []interface{}) error {
 	bulk, err := w.client.PrepareBatch(w.ctx, w.query)
 	if err != nil {
-		log.Warnf("PrepareBatch err: %v", err)
-		return
+		return fmt.Errorf("prepare batch: %w", err)
 	}
 
 	for _, val := range vals {
 		err = bulk.Append(val.(ValueWithIndex).val...)
 		if err != nil {
-			log.Warnf("Bulk append err: %v", err)
-			return
+			return fmt.Errorf("append batch value: %w", err)
 		}
 	}
 
 	err = bulk.Send()
 	if err != nil {
-		log.Warnf("Bulk send err: %v", err)
-		return
+		return fmt.Errorf("send batch: %w", err)
 	}
 
 	log.Debugf("Bulk send data success")
+	return nil
 }
