@@ -17,6 +17,11 @@ type Definition struct {
 	Chinese    string
 }
 
+type ErrorRegistry interface {
+	Catalog() *Catalog
+	SystemErrorCode() Code
+}
+
 type Catalog struct {
 	definitions map[Code]Definition
 	localizerZh *i18n.Localizer

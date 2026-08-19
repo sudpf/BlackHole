@@ -33,3 +33,25 @@ var Definitions = []apperror.Definition{
 	{Code: EmailAlreadyExists, HTTPStatus: http.StatusConflict, English: "Email already exists", Chinese: "邮箱已被使用"},
 	{Code: DatabaseConflict, HTTPStatus: http.StatusConflict, English: "Database conflict", Chinese: "数据冲突"},
 }
+
+type registry struct{}
+
+var Registry apperror.ErrorRegistry = registry{}
+
+func (registry) Catalog() *apperror.Catalog {
+	return defaultCatalog
+}
+
+func (registry) SystemErrorCode() apperror.Code {
+	return SystemError
+}
+
+var defaultCatalog *apperror.Catalog
+
+func init() {
+	cat, err := apperror.NewCatalog(Definitions...)
+	if err != nil {
+		panic(err)
+	}
+	defaultCatalog = cat
+}

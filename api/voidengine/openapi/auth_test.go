@@ -72,6 +72,19 @@ func TestRequireAuthMapsMissingCredentialToUnauthorized(t *testing.T) {
 	}
 }
 
+type testErrorRegistry struct {
+	catalog    *apperror.Catalog
+	systemCode apperror.Code
+}
+
+func (r testErrorRegistry) Catalog() *apperror.Catalog {
+	return r.catalog
+}
+
+func (r testErrorRegistry) SystemErrorCode() apperror.Code {
+	return r.systemCode
+}
+
 func newAuthTestEngine(t *testing.T) *gin.Engine {
 	t.Helper()
 
@@ -85,7 +98,9 @@ func newAuthTestEngine(t *testing.T) *gin.Engine {
 	}
 
 	engine := gin.New()
-	engine.Use(middleware.ErrorHandler(catalog, translator))
+	registry := testErrorRegistry{catalog: catalog, systemCode: errorcode.SystemError}
+	engine.Use(middleware.ErrorHandler(registry, translator))
+	engine.Use(middleware.Recovery(registry))
 	engine.Use(middleware.RequestContext(time.Second))
 	engine.NoRoute(func(c *gin.Context) {
 		_ = c.Error(apperror.New(errorcode.APINotFound))

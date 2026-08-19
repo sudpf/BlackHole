@@ -102,6 +102,19 @@ func TestErrorHandlerRecoversPanic(t *testing.T) {
 	}
 }
 
+type testErrorRegistry struct {
+	catalog    *apperror.Catalog
+	systemCode apperror.Code
+}
+
+func (r testErrorRegistry) Catalog() *apperror.Catalog {
+	return r.catalog
+}
+
+func (r testErrorRegistry) SystemErrorCode() apperror.Code {
+	return r.systemCode
+}
+
 func newErrorTestRouter(t *testing.T) *gin.Engine {
 	t.Helper()
 
@@ -114,13 +127,14 @@ func newErrorTestRouter(t *testing.T) *gin.Engine {
 	if err != nil {
 		t.Fatalf("NewCatalog error = %v", err)
 	}
+	registry := testErrorRegistry{catalog: catalog, systemCode: testSystemError}
 	translator, err := validation.NewTranslator()
 	if err != nil {
 		t.Fatalf("NewTranslator error = %v", err)
 	}
 	router := gin.New()
-	router.Use(ErrorHandler(catalog, translator))
-	router.Use(Recovery())
+	router.Use(ErrorHandler(registry, translator))
+	router.Use(Recovery(registry))
 	router.Use(RequestContext(time.Second))
 	return router
 }

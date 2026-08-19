@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"BlackHole/api/common/response"
-	"BlackHole/internal/voidengine/errorcode"
 	"BlackHole/pkg/apperror"
 	"BlackHole/pkg/env"
 	"BlackHole/pkg/logger"
@@ -15,7 +14,9 @@ type ValidationTranslator interface {
 	TranslateErrors(requestEnv *env.Env, err error) map[string]string
 }
 
-func ErrorHandler(catalog *apperror.Catalog, translator ValidationTranslator) gin.HandlerFunc {
+func ErrorHandler(registry apperror.ErrorRegistry, translator ValidationTranslator) gin.HandlerFunc {
+	catalog := registry.Catalog()
+	systemCode := registry.SystemErrorCode()
 	return func(c *gin.Context) {
 		c.Next()
 
@@ -25,16 +26,16 @@ func ErrorHandler(catalog *apperror.Catalog, translator ValidationTranslator) gi
 		err := c.Errors.Last().Err
 		appErr, known := apperror.As(err)
 		if !known {
-			appErr = apperror.Wrap(errorcode.SystemError, err)
+			appErr = apperror.Wrap(systemCode, err)
 		}
 
 		definition, exists := catalog.Lookup(appErr.Code())
 		if !exists {
-			appErr = apperror.Wrap(errorcode.SystemError, err)
-			definition, exists = catalog.Lookup(errorcode.SystemError)
+			appErr = apperror.Wrap(systemCode, err)
+			definition, exists = catalog.Lookup(systemCode)
 			if !exists {
 				logger.FromContext(c.Request.Context()).
-					WithField("code", errorcode.SystemError).
+					WithField("code", int(systemCode)).
 					Error("system error code is not registered")
 				c.AbortWithStatus(http.StatusInternalServerError)
 				return
@@ -63,9 +64,9 @@ func ErrorHandler(catalog *apperror.Catalog, translator ValidationTranslator) gi
 				WithField("code", appErr.Code()).
 				Error("localize API error")
 
-			appErr = apperror.Wrap(errorcode.SystemError, err)
-			definition, _ = catalog.Lookup(errorcode.SystemError)
-			message, localizeErr = catalog.Localize(requestEnv, apperror.MessageID(errorcode.SystemError), nil)
+			appErr = apperror.Wrap(systemCode, err)
+			definition, _ = catalog.Lookup(systemCode)
+			message, localizeErr = catalog.Localize(requestEnv, apperror.MessageID(systemCode), nil)
 			if localizeErr != nil {
 				logger.FromContext(c.Request.Context()).WithError(localizeErr).Error("localize system error")
 				c.AbortWithStatus(http.StatusInternalServerError)

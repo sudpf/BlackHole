@@ -26,11 +26,6 @@ type Server struct {
 }
 
 func NewHTTPServer(address, apiLogFile string, apiLogSize string, requestTimeout time.Duration) (*Server, error) {
-	errorCatalog, err := apperror.NewCatalog(errorcode.Definitions...)
-	if err != nil {
-		return nil, fmt.Errorf("initialize error catalog: %w", err)
-	}
-
 	validationTranslator, err := validation.NewTranslator()
 	if err != nil {
 		return nil, fmt.Errorf("initialize validation translator: %w", err)
@@ -40,14 +35,14 @@ func NewHTTPServer(address, apiLogFile string, apiLogSize string, requestTimeout
 		address:      address,
 		router:       gin.New(),
 		routes:       make(map[string][]router.Route),
-		errorCatalog: errorCatalog,
+		errorCatalog: errorcode.Registry.Catalog(),
 	}
 
 	if err := middleware.ApiLogMiddlewares(server.router, apiLogFile, apiLogSize); err != nil {
 		return nil, err
 	}
-	server.router.Use(middleware.ErrorHandler(errorCatalog, validationTranslator))
-	server.router.Use(middleware.Recovery())
+	server.router.Use(middleware.ErrorHandler(errorcode.Registry, validationTranslator))
+	server.router.Use(middleware.Recovery(errorcode.Registry))
 	server.router.Use(middleware.RequestContext(requestTimeout))
 	server.router.NoRoute(func(c *gin.Context) {
 		_ = c.Error(apperror.New(errorcode.APINotFound))
